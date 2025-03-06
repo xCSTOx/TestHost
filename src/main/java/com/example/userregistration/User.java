@@ -24,8 +24,6 @@ public class User {
     private List<String> addiction;
 
     // Constructors, Getters, and Setters
-    public User() {}
-
     public User(String username, String password, List<String> addiction) {
         this.username = username;
         this.password = password;
