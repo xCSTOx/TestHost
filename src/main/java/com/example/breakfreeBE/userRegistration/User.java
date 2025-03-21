@@ -1,8 +1,7 @@
-package com.example.userregistration;
+package com.example.breakfreeBE.userRegistration;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import java.util.List;
 
 @Entity
 @Table(name = "users", uniqueConstraints = { @UniqueConstraint(columnNames = "username") })
@@ -20,16 +19,12 @@ public class User {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
-    @ElementCollection
-    private List<String> addiction;
-
     // Constructors, Getters, and Setters
     public User() {}
 
-    public User(String username, String password, List<String> addiction) {
+    public User(String username, String password) {
         this.username = username;
         this.password = password;
-        this.addiction = addiction;
     }
 
     public Long getId() { return id; }
@@ -38,6 +33,5 @@ public class User {
     public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
-    public List<String> getAddiction() { return addiction; }
-    public void setAddiction(List<String> addiction) { this.addiction = addiction; }
+
 }

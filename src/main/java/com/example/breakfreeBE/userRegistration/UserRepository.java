@@ -1,4 +1,4 @@
-package com.example.userregistration;
+package com.example.breakfreeBE.userRegistration;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

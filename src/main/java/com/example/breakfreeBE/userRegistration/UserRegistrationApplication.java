@@ -1,4 +1,4 @@
-package com.example.userregistration;
+package com.example.breakfreeBE.userRegistration;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
