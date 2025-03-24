@@ -1,8 +1,11 @@
 package com.example.userregistration.entity;
 
+import com.example.addiction.entity.Addiction;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
+import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -24,6 +27,8 @@ public class User {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Addiction> addictions;
     // Constructor tanpa parameter
     public User() {}
 
@@ -65,5 +70,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public List<Addiction> getAddictions() {
+        return addictions;
+    }
+
+    public void setAddictions(List<Addiction> addictions) {
+        this.addictions = addictions;
     }
 }
