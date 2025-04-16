@@ -1,4 +1,4 @@
-package com.example.breakfreeBE.userRegistration.common;
+package com.example.breakfreeBE.common;
 
 import java.io.Serializable;
 

@@ -1,7 +1,7 @@
 package com.example.breakfreeBE.userRegistration;
 
-import com.example.breakfreeBE.userRegistration.common.BaseResponse;
-import com.example.breakfreeBE.userRegistration.common.MetaResponse;
+import com.example.breakfreeBE.common.BaseResponse;
+import com.example.breakfreeBE.common.MetaResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,7 +64,7 @@ public class UserController {
     public ResponseEntity<BaseResponse<User>> updateUser(@PathVariable Long id, @RequestBody User user) {
         try {
             User updatedUser = userService.updateUser(id, user);
-            updatedUser.setPassword(null); // Jangan tampilkan password
+            updatedUser.setPassword(null);
             return ResponseEntity.ok(new BaseResponse<>(
                     new MetaResponse(true, "User updated successfully"),
                     updatedUser
