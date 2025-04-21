@@ -53,7 +53,7 @@ public class UserController {
         }
 
         User createdUser = userService.saveUser(user);
-        createdUser.setPassword(null); // Jangan tampilkan password
+        createdUser.setPassword(null);
         return ResponseEntity.status(HttpStatus.CREATED).body(new BaseResponse<>(
                 new MetaResponse(true, "User registered successfully"),
                 createdUser
