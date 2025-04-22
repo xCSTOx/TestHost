@@ -1,8 +1,8 @@
 package com.example.userregistration.controller;
 
-import com.example.userregistration.common.MetaResponse;
+import com.example.common.MetaResponse;
 import com.example.userregistration.entity.User;
-import com.example.userregistration.common.BaseResponse;
+import com.example.common.BaseResponse;
 import com.example.userregistration.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -52,7 +52,21 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<BaseResponse<Map<String, String>>> registerUser(@Valid @RequestBody UserRequest request) {
+    public ResponseEntity<BaseResponse<Map<String, String>>> registerUser(@RequestBody UserRequest request) {
+
+        if (userService.existsByUsername(request.username)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    new BaseResponse<>(new MetaResponse(false, "Username is already taken"), null)
+            );
+        }
+
+        if (request.username == null || request.username.trim().isEmpty() ||
+                request.password == null || request.password.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new BaseResponse<>(new MetaResponse(false, "User not found"), null)
+            );
+        }
+
         User newUser = userService.registerUser(request.username, request.password);
 
         // Deklarasi dan inisialisasi responseData dengan HashMap
@@ -65,7 +79,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<BaseResponse<Map<String, String>>> login(@Valid @RequestBody UserRequest request) {
+    public ResponseEntity<BaseResponse<Map<String, String>>> login(@RequestBody UserRequest request) {
         Optional<User> userOpt = userService.findByUsername(request.username);
 
         if (userOpt.isPresent()) {
@@ -85,7 +99,6 @@ public class UserController {
                 );
             }
         }
-
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new BaseResponse<>(new MetaResponse(false, "User not found"), null)
         );
@@ -102,7 +115,7 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<BaseResponse<Map<String, String>>> updateUsername(@Valid @RequestBody UserUpdate request) {
+    public ResponseEntity<BaseResponse<Map<String, String>>> updateUsername(@RequestBody UserUpdate request) {
         if (userService.existsByUsername(request.username)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(
                     new BaseResponse<>(new MetaResponse(false, "Username is already taken"), null)

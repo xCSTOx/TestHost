@@ -1,9 +1,13 @@
 package com.example.addiction.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "addiction_data")
+@Data
+@NoArgsConstructor
 public class AddictionData {
 
     @Id
@@ -12,10 +16,4 @@ public class AddictionData {
 
     @Column(name = "addiction_name", unique = true, nullable = false)
     private String addictionName;
-
-    public String getAddictionId() { return addictionId; }
-    public void setAddictionId(String addictionId) { this.addictionId = addictionId; }
-
-    public String getAddictionName() { return addictionName; }
-    public void setAddictionName(String addictionName) { this.addictionName = addictionName; }
 }

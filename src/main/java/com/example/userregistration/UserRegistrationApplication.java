@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 @SpringBootApplication
-@EntityScan(basePackages = {"com.example.userregistration.entity", "com.example.addiction.entity"})
+@EntityScan(basePackages = {"com.example.userregistration.entity", "com.example.community.entity", "com.example.addiction.entity"})
 public class UserRegistrationApplication {
 
 	public static void main(String[] args) {

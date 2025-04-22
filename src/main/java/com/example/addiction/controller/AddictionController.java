@@ -1,9 +1,9 @@
 package com.example.addiction.controller;
 
-import com.example.addiction.common.BaseResponse;
-import com.example.addiction.common.MetaResponse;
-import com.example.addiction.entity.Addiction;
+import com.example.addiction.dto.AddictionDTO;
 import com.example.addiction.service.AddictionService;
+import com.example.common.BaseResponse;
+import com.example.common.MetaResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,15 +21,33 @@ public class AddictionController {
     @Autowired
     private AddictionService addictionService;
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<BaseResponse<List<Addiction>>> getAddictionsByUser(@PathVariable String userId) {
-        List<Addiction> addictions = addictionService.getAddictionsByUser(userId);
-        return ResponseEntity.ok(new BaseResponse<>(new MetaResponse(true, "Addiction list retrieved successfully"), addictions));
+    @PostMapping("/view")
+    public ResponseEntity<BaseResponse<List<AddictionDTO>>> getAddictionsByUser(@RequestBody AddictionDTO requestDto) {
+        if (requestDto.getUserId()==null || requestDto.getUserId().isBlank()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
+            );
+        }
+        List<AddictionDTO> addictions = addictionService.getAddictionsByUser(requestDto.getUserId());
+        return ResponseEntity.ok(
+                new BaseResponse<>(new MetaResponse(true, "Addiction list retrieved successfully"), addictions)
+        );
     }
 
-    @PostMapping("/")
-    public ResponseEntity<BaseResponse<Map<String, String>>> createAddiction(@RequestBody Addiction addiction) {
-        Optional<Addiction> newAddiction = addictionService.saveAddiction(addiction);
+    @PostMapping("/add")
+    public ResponseEntity<BaseResponse<Map<String, String>>> createAddiction(@RequestBody AddictionDTO dto) {
+        if (dto.getUserId() == null || dto.getUserId().isBlank() ||
+                dto.getAddictionId() == null || dto.getAddictionId().isBlank() ||
+                dto.getStartDate() == null ||
+                dto.getMotivation() == null || dto.getMotivation().isBlank() ||
+                dto.getSaver() == null) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
+            );
+        }
+
+        Optional<AddictionDTO> newAddiction = addictionService.saveAddiction(dto);
 
         if (newAddiction.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -46,8 +64,8 @@ public class AddictionController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<BaseResponse<Map<String, String>>> updateAddiction(@RequestBody Addiction addiction) {
-        Optional<Addiction> updatedAddiction = addictionService.updateAddiction(addiction);
+    public ResponseEntity<BaseResponse<Map<String, String>>> updateAddiction(@RequestBody AddictionDTO dto) {
+        Optional<AddictionDTO> updatedAddiction = addictionService.updateAddiction(dto);
 
         if (updatedAddiction.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
@@ -59,8 +77,8 @@ public class AddictionController {
     }
 
     @PatchMapping("/reset")
-    public ResponseEntity<BaseResponse<Map<String, String>>> resetAddiction(@RequestBody Addiction addiction) {
-        Optional<Addiction> resetAddiction = addictionService.resetAddiction(addiction);
+    public ResponseEntity<BaseResponse<Map<String, String>>> resetAddiction(@RequestBody AddictionDTO dto) {
+        Optional<AddictionDTO> resetAddiction = addictionService.resetAddiction(dto);
 
         if (resetAddiction.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
@@ -72,8 +90,8 @@ public class AddictionController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<BaseResponse<Map<String, String>>> deleteAddiction(@RequestBody Addiction addiction) {
-        boolean isDeleted = addictionService.deleteAddiction(addiction);
+    public ResponseEntity<BaseResponse<Map<String, String>>> deleteAddiction(@RequestBody AddictionDTO dto) {
+        boolean isDeleted = addictionService.deleteAddiction(dto);
 
         if (!isDeleted) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(

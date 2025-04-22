@@ -1,23 +1,30 @@
 package com.example.addiction.entity;
 
 import com.example.userregistration.entity.User;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
 @Entity
 @IdClass(AddictionId.class)
+@Data
+@NoArgsConstructor
 public class Addiction {
 
     @Id
-    @Column(name = "user_id")
+    @Column(name = "user_id", length = 6)
     private String userId;
 
     @Id
-    @Column(name = "addiction_id")
+    @Column(name = "addiction_id", length = 6)
     private String addictionId;
 
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JsonBackReference //karena relasi dua arah, dan bisa tetap serialisasi satu arah. (Pake ini untuk tidak loop datanya)
     private User user;
 
     @ManyToOne
@@ -35,64 +42,5 @@ public class Addiction {
 
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
-
-
-    public Addiction() {}
-
-    public Addiction(String userId, String addictionId, Integer saver, String motivation, LocalDate startDate, LocalDate targetDate) {
-        this.userId = userId;
-        this.addictionId = addictionId;
-        this.saver = saver;
-        this.motivation = motivation;
-        this.startDate = startDate;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getAddictionId() {
-        return addictionId;
-    }
-
-    public void setAddictionId(String addictionId) {
-        this.addictionId = addictionId;
-    }
-
-    public Long getStreaks() {
-        return streaks;
-    }
-
-    public void setStreaks(Long streaks) {
-        this.streaks = streaks;
-    }
-
-    public String getMotivation() {
-        return motivation;
-    }
-
-    public void setMotivation(String motivation) {
-        this.motivation = motivation;
-    }
-
-    public Integer getSaver() {
-        return saver;
-    }
-
-    public void setSaver(Integer saver) {
-        this.saver = saver;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
 
 }

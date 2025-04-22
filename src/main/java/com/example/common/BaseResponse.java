@@ -1,4 +1,4 @@
-package com.example.addiction.common;
+package com.example.common;
 
 import java.io.Serializable;
 

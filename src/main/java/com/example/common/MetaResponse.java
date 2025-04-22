@@ -1,4 +1,4 @@
-package com.example.userregistration.common;
+package com.example.common;
 
 import java.io.Serializable;
 
