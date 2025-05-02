@@ -26,7 +26,7 @@ public class BookmarkedPostController {
     public ResponseEntity<BaseResponse<Void>> bookmarkPost(@RequestBody BookmarkedRequestDTO bookmarkRequest) {
         try {
             // Validasi field-field yang diperlukan
-            if (bookmarkRequest.getUserId() == null || bookmarkRequest.getPostId() == null) {
+            if (bookmarkRequest.getUserId() == null || bookmarkRequest.getPostId() == null || bookmarkRequest.getUserId().isBlank() || bookmarkRequest.getPostId().isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Bookmark not found"), null)
                 );
@@ -84,7 +84,7 @@ public class BookmarkedPostController {
             String userId = request.get("userId");
 
             // Validasi field yang diperlukan
-            if (userId == null) {
+            if (userId == null || userId.isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Bookmark not found"), null)
                 );

@@ -39,7 +39,7 @@ public class PostController {
     public ResponseEntity<BaseResponse<Map<String, String>>> createPost(@RequestBody PostDTO postDTO) {
         try {
             // Validasi field-field yang diperlukan
-            if (postDTO.getUserId() == null || postDTO.getPostText() == null) {
+            if (postDTO.getUserId() == null || postDTO.getPostText() == null || postDTO.getUserId().isBlank() || postDTO.getPostText().isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
                 );
@@ -67,7 +67,7 @@ public class PostController {
             String postId = requestBody.get("postId");
             String userId = requestBody.get("userId");
 
-            if (postId == null || userId == null) {
+            if (postId == null || userId == null || postId.isBlank() || userId.isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
                 );
@@ -89,7 +89,7 @@ public class PostController {
     public ResponseEntity<BaseResponse<Void>> updatePost(@RequestBody PostDTO postDTO) {
         try {
             // Validasi field-field yang diperlukan
-            if (postDTO.getPostId() == null || postDTO.getUserId() == null || postDTO.getPostText() == null) {
+            if (postDTO.getPostId() == null || postDTO.getUserId() == null || postDTO.getPostText() == null || postDTO.getPostId().isBlank() || postDTO.getUserId().isBlank() || postDTO.getPostText().isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
                 );
@@ -112,19 +112,13 @@ public class PostController {
             String postId = requestBody.get("postId");
             String userId = requestBody.get("userId");
 
-            if (postId == null || userId == null) {
+            if (postId == null || userId == null || postId.isBlank() || userId.isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
                 );
             }
 
             PostDetailDTO postDetail = postService.getPostDetailsById(postId, userId);
-
-            if (postDetail == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
-                );
-            }
 
             return ResponseEntity.ok(
                     new BaseResponse<>(new MetaResponse(true, "Post details retrieved successfully"), postDetail)
@@ -141,7 +135,7 @@ public class PostController {
         try {
             String userId = requestBody.get("userId");
 
-            if (userId == null) {
+            if (userId == null || userId.isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
                 );

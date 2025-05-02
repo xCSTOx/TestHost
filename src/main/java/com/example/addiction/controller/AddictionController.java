@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,16 +25,54 @@ public class AddictionController {
 
     @PostMapping("/view")
     public ResponseEntity<BaseResponse<List<AddictionDTO>>> getAddictionsByUser(@RequestBody AddictionDTO requestDto) {
-        if (requestDto.getUserId()==null || requestDto.getUserId().isBlank()) {
+        if (requestDto.getUserId() == null || requestDto.getUserId().isBlank()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
             );
         }
+
         List<AddictionDTO> addictions = addictionService.getAddictionsByUser(requestDto.getUserId());
+
+        for (AddictionDTO addiction : addictions) {
+            if (addiction.getStartDate() != null) {
+                long streakDays = ChronoUnit.DAYS.between(addiction.getStartDate(), LocalDate.now());
+                AddictionService.StreakFunFact streakFact = addictionService.getStreakFunFact(streakDays);
+                addiction.setStreakFunFact(streakFact);
+            }
+        }
+
         return ResponseEntity.ok(
                 new BaseResponse<>(new MetaResponse(true, "Addiction list retrieved successfully"), addictions)
         );
     }
+
+    @PostMapping("/saver")
+    public ResponseEntity<BaseResponse<Map<String, Object>>> getFunFactSaver(@RequestBody AddictionDTO requestDto) {
+        if (requestDto.getUserId() == null || requestDto.getUserId().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse<>(new MetaResponse(false, "User ID is required"), null)
+            );
+        }
+
+        AddictionService.StreakFunFact savingFunFact = addictionService.getSavingFunFact(requestDto.getUserId());
+
+        if (savingFunFact == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
+            );
+        }
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("funfact", savingFunFact.fact);
+        responseData.put("image_url", savingFunFact.imageUrl);
+        responseData.put("color", savingFunFact.bgColor);
+
+        return ResponseEntity.ok(
+                new BaseResponse<>(new MetaResponse(true, "Fun fact calculated successfully"), responseData)
+        );
+    }
+
+
 
     @PostMapping("/add")
     public ResponseEntity<BaseResponse<Map<String, String>>> createAddiction(@RequestBody AddictionDTO dto) {

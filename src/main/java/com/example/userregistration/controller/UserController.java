@@ -47,8 +47,14 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<BaseResponse<List<User>>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(new BaseResponse<>(new MetaResponse(true, "User list retrieved successfully"), users));
+        try {
+            List<User> users = userService.getAllUsers();
+            return ResponseEntity.ok(new BaseResponse<>(new MetaResponse(true, "User list retrieved successfully"), users));
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new BaseResponse<>(new MetaResponse(false, "Failed to retrieve users    : " + e.getMessage()), null)
+            );
+            }
     }
 
     @PostMapping("/register")

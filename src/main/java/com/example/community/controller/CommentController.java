@@ -26,8 +26,7 @@ public class CommentController {
     public ResponseEntity<BaseResponse<Map<String, String>>> createComment(@RequestBody CommentDTO commentDTO) {
         try {
             // Validasi field-field yang diperlukan
-            if (commentDTO.getPostId() == null || commentDTO.getUserId() == null ||
-                    commentDTO.getCommentText() == null) {
+            if (commentDTO.getPostId() == null || commentDTO.getUserId() == null || commentDTO.getCommentText() == null || commentDTO.getPostId().isBlank() || commentDTO.getUserId().isBlank() || commentDTO.getCommentText().isBlank() ) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Comment not found"), null)
                 );
@@ -54,7 +53,7 @@ public class CommentController {
     public ResponseEntity<BaseResponse<List<CommentDTO>>> getCommentsByPost(@RequestBody CommentDTO commentDTO) {
         try {
             // Validasi field yang diperlukan
-            if (commentDTO.getPostId() == null) {
+            if (commentDTO.getPostId() == null || commentDTO.getPostId().isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Comment not found"), null)
                 );
