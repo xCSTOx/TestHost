@@ -1,30 +1,26 @@
 package com.example.breakfreeBE.userRegistration.controller;
 
+import com.example.breakfreeBE.avatar.entity.Avatar;
+import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.common.MetaResponse;
 import com.example.breakfreeBE.userRegistration.entity.User;
-import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.userRegistration.service.UserService;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.springframework.security.crypto.bcrypt.BCrypt;
+import java.util.*;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
-    private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+    private final UserService userService;
 
     public static class UserRequest {
         @NotBlank(message = "Username is required")
@@ -37,7 +33,6 @@ public class UserController {
     }
 
     public static class UserUpdate {
-
         public String userId;
 
         @NotBlank(message = "Username is required")
@@ -50,16 +45,15 @@ public class UserController {
         try {
             List<User> users = userService.getAllUsers();
             return ResponseEntity.ok(new BaseResponse<>(new MetaResponse(true, "User list retrieved successfully"), users));
-        }catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new BaseResponse<>(new MetaResponse(false, "Failed to retrieve users    : " + e.getMessage()), null)
+                    new BaseResponse<>(new MetaResponse(false, "Failed to retrieve users: " + e.getMessage()), null)
             );
         }
     }
 
     @PostMapping("/register")
     public ResponseEntity<BaseResponse<Map<String, String>>> registerUser(@RequestBody UserRequest request) {
-
         if (userService.existsByUsername(request.username)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(
                     new BaseResponse<>(new MetaResponse(false, "Username is already taken"), null)
@@ -68,14 +62,12 @@ public class UserController {
 
         if (request.username == null || request.username.trim().isEmpty() ||
                 request.password == null || request.password.trim().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new BaseResponse<>(new MetaResponse(false, "User not found"), null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse<>(new MetaResponse(false, "Username and password must not be empty"), null)
             );
         }
 
         User newUser = userService.registerUser(request.username, request.password);
-
-        // Deklarasi dan inisialisasi responseData dengan HashMap
         Map<String, String> responseData = new HashMap<>();
         responseData.put("userId", newUser.getUserId());
 
@@ -92,7 +84,6 @@ public class UserController {
             User user = userOpt.get();
 
             if (BCrypt.checkpw(request.password, user.getPassword())) {
-                // Menggunakan Map untuk menyimpan userId agar format JSON tetap seragam
                 Map<String, String> responseData = new HashMap<>();
                 responseData.put("userId", user.getUserId());
 
@@ -105,11 +96,11 @@ public class UserController {
                 );
             }
         }
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new BaseResponse<>(new MetaResponse(false, "User not found"), null)
         );
     }
-
 
     @GetMapping("/{userId}")
     public ResponseEntity<BaseResponse<User>> getUserById(@PathVariable String userId) {
@@ -130,7 +121,40 @@ public class UserController {
         userService.updateUsername(request.userId, request.username);
 
         return ResponseEntity.ok(new BaseResponse<>(
-                new MetaResponse(true, "Username updated successfully"),null
+                new MetaResponse(true, "Username updated successfully"), null
         ));
+    }
+
+    // GET /users/{userId}/avatar
+    @GetMapping("/{userId}/avatar")
+    public ResponseEntity<BaseResponse<Avatar>> getUserAvatar(@PathVariable String userId) {
+        try {
+            Avatar avatar = userService.getUserAvatar(userId);
+            return ResponseEntity.ok(new BaseResponse<>(
+                    new MetaResponse(true, "Avatar retrieved successfully"), avatar
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new BaseResponse<>(new MetaResponse(false, e.getMessage()), null)
+            );
+        }
+    }
+
+    // PUT /users/{userId}/avatar/{avatarId}
+    @PutMapping("/{userId}/avatar/{avatarId}")
+    public ResponseEntity<BaseResponse<String>> updateUserAvatar(
+            @PathVariable String userId,
+            @PathVariable String avatarId
+    ) {
+        try {
+            userService.updateUserAvatar(userId, avatarId);
+            return ResponseEntity.ok(new BaseResponse<>(
+                    new MetaResponse(true, "Avatar updated successfully"), "Avatar updated"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse<>(new MetaResponse(false, e.getMessage()), null)
+            );
+        }
     }
 }

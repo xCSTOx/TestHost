@@ -2,27 +2,28 @@ package com.example.breakfreeBE;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
+@SpringBootApplication
+@EntityScan(basePackages = {
+        "com.example.breakfreeBE.userRegistration.entity",
+        "com.example.breakfreeBE.avatar.entity",
+        "com.example.breakfreeBE.achievement.entity",
+        "com.example.breakfreeBE.addiction.entity",
+        "com.example.breakfreeBE.challenge.entity"
+})
+@EnableJpaRepositories(basePackages = {
+        "com.example.breakfreeBE.achievement.repository",
+        "com.example.breakfreeBE.addiction.repository",
+        "com.example.breakfreeBE.challenge.repository",
+        "com.example.breakfreeBE.userRegistration.repository",
+        "com.example.breakfreeBE.avatar.repository"
+})
 
-@SpringBootApplication(scanBasePackages = "com.example.breakfreeBE")
 public class BreakFreeBE {
 
-	public static void main(String[] args) {
-		SpringApplication.run(BreakFreeBE.class, args);
-	}
-
-
-    @Bean
-    public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
-        return args -> {
-            for (String name : ctx.getBeanDefinitionNames()) {
-                if (name.toLowerCase().contains("achievement")) {
-                    System.out.println(">> Bean: " + name);
-                }
-            }
-        };
+    public static void main(String[] args) {
+        SpringApplication.run(BreakFreeBE.class, args);
     }
 }

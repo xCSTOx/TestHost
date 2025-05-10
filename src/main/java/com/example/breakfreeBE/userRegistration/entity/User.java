@@ -1,6 +1,7 @@
 package com.example.breakfreeBE.userRegistration.entity;
 
 import com.example.breakfreeBE.addiction.entity.Addiction;
+import com.example.breakfreeBE.avatar.entity.Avatar;
 import com.example.breakfreeBE.challenge.entity.Challenge;
 import com.example.breakfreeBE.community.entity.BookmarkedPost;
 import com.example.breakfreeBE.community.entity.Comment;
@@ -25,7 +26,7 @@ public class User {
     @Column(name = "user_id", length = 6, nullable = false, unique = true)
     private String userId;
 
-    @Column(name = "avatar_id", length = 6, unique = true)
+    @Column(name = "avatar_id", length = 6, unique = true, insertable = false, updatable = false)
     private String avatarId;
 
     @Column(name = "username", length = 64, unique = true, nullable = false)
@@ -57,6 +58,11 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Challenge> challenges;
+
+    @ManyToOne
+    @JoinColumn(name = "avatar_id")
+    private Avatar avatar;
+
 
     public User(String userId, String username, String password) {
         this.userId = userId;

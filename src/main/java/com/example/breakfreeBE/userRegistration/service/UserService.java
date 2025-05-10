@@ -1,7 +1,10 @@
 package com.example.breakfreeBE.userRegistration.service;
 
+import com.example.breakfreeBE.avatar.entity.Avatar;
+import com.example.breakfreeBE.avatar.repository.AvatarRepository;
 import com.example.breakfreeBE.userRegistration.entity.User;
 import com.example.breakfreeBE.userRegistration.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +16,11 @@ import java.util.Optional;
 public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final AvatarRepository avatarRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(@Qualifier("userRepository") UserRepository userRepository, AvatarRepository avatarRepository) {
         this.userRepository = userRepository;
+        this.avatarRepository = avatarRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
@@ -44,6 +49,18 @@ public class UserService {
         }
     }
 
+    @Transactional
+    public User updateUserAvatar(String userId, String avatarId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Avatar avatar = avatarRepository.findById(avatarId)
+                .orElseThrow(() -> new RuntimeException("Avatar not found"));
+
+        user.setAvatar(avatar);
+        return userRepository.save(user);
+    }
+
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
@@ -69,5 +86,11 @@ public class UserService {
             return "Username successfully updated";
         }
         return "User not found";
+    }
+
+    public Avatar getUserAvatar(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return user.getAvatar();
     }
 }

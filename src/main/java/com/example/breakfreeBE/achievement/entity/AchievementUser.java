@@ -1,5 +1,6 @@
 package com.example.breakfreeBE.achievement.entity;
 
+import com.example.breakfreeBE.userRegistration.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,15 +12,19 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AchievementUser {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
 
-    @Column(name = "achievement_id")
-    private String achievementId;
+    @EmbeddedId
+    private AchievementUserId id;
 
-    @Column(name = "user_id")
-    private String userId;
+    @ManyToOne
+    @MapsId("achievementId")
+    @JoinColumn(name = "achievement_id")
+    private Achievement achievement;
+
+    @ManyToOne
+    @MapsId("userId")
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "achievement_date")
     private Date achievementDate;
