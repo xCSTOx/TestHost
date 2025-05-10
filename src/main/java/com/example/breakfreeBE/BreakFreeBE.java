@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.example.breakfreeBE.addiction.entity",
         "com.example.breakfreeBE.challenge.entity"
 })
+@ComponentScan(basePackages = "com.example.breakfreeBE")
 @EnableJpaRepositories(basePackages = {
         "com.example.breakfreeBE.achievement.repository",
         "com.example.breakfreeBE.addiction.repository",
