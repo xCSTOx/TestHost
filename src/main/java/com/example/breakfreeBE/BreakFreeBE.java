@@ -3,6 +3,7 @@ package com.example.breakfreeBE;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
@@ -11,7 +12,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.example.breakfreeBE.avatar.entity",
         "com.example.breakfreeBE.achievement.entity",
         "com.example.breakfreeBE.addiction.entity",
-        "com.example.breakfreeBE.challenge.entity"
+        "com.example.breakfreeBE.challenge.entity",
+        "com.example.breakfreeBE.community.entity"
 })
 @ComponentScan(basePackages = "com.example.breakfreeBE")
 @EnableJpaRepositories(basePackages = {
@@ -19,7 +21,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.example.breakfreeBE.addiction.repository",
         "com.example.breakfreeBE.challenge.repository",
         "com.example.breakfreeBE.userRegistration.repository",
-        "com.example.breakfreeBE.avatar.repository"
+        "com.example.breakfreeBE.avatar.repository",
+        "com.example.breakfreeBE.community.repository"
 })
 
 public class BreakFreeBE {
