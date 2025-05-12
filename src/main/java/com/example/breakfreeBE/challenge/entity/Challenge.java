@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "challenges")
+@Table(name = "challenge")
 @Data
 public class Challenge {
 
@@ -30,6 +30,11 @@ public class Challenge {
     private ChallengeData challengeData;
 
     private LocalDate startDate;
+
+    @Column(name = "times_complete", nullable = false)
     private int timesComplete;
+
+    @Column(name = "status", nullable = false)
     private String status;
+
 }

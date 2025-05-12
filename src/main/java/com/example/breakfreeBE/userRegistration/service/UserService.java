@@ -50,15 +50,17 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUserAvatar(String userId, String avatarId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public void updateUserAvatar(String userId, String avatarId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<Avatar> avatarOpt = avatarRepository.findById(avatarId);
 
-        Avatar avatar = avatarRepository.findById(avatarId)
-                .orElseThrow(() -> new RuntimeException("Avatar not found"));
-
-        user.setAvatar(avatar);
-        return userRepository.save(user);
+        if (userOpt.isPresent() && avatarOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setAvatar(avatarOpt.get());
+            userRepository.save(user);
+        } else {
+            throw new RuntimeException("User or Avatar not found");
+        }
     }
 
     public Optional<User> findByUsername(String username) {

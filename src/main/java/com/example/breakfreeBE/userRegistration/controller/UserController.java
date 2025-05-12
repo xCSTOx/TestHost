@@ -157,4 +157,23 @@ public class UserController {
             );
         }
     }
+
+    // POST /users/{userId}/avatar
+    @PostMapping("/{userId}/avatar")
+    public ResponseEntity<BaseResponse<String>> addAvatarToUser(
+            @PathVariable String userId,
+            @RequestBody Map<String, String> body
+    ) {
+        try {
+            String avatarId = body.get("avatarId");
+            userService.updateUserAvatar(userId, avatarId);  // reuse existing method
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    new BaseResponse<>(new MetaResponse(true, "Avatar added to user"), "Avatar added")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse<>(new MetaResponse(false, e.getMessage()), null)
+            );
+        }
+    }
 }
