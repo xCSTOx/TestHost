@@ -38,14 +38,26 @@ public class ChallengeService {
     }
 
     public void participateChallenge(ChallengeUserRequest request) {
+        String challengeId = request.getChallengeId();
+        String userId = request.getUserId();
+
+        challengeDataRepository.findById(challengeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found"));
+
+        boolean alreadyJoined = challengeRepository.findByChallengeIdAndUserId(challengeId, userId).isPresent();
+        if (alreadyJoined) {
+            throw new IllegalStateException("User already joined this challenge");
+        }
+
         Challenge challenge = new Challenge();
-        challenge.setChallengeId(request.getChallengeId());
-        challenge.setUserId(request.getUserId());
+        challenge.setChallengeId(challengeId);
+        challenge.setUserId(userId);
         challenge.setStatus("ongoing");
         challenge.setStartDate(LocalDate.now());
         challenge.setTimesComplete(0);
         challengeRepository.save(challenge);
     }
+
 
     @Transactional
     public void stopChallenge(ChallengeUserRequest request) {

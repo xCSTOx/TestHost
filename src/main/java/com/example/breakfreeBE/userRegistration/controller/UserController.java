@@ -1,5 +1,6 @@
 package com.example.breakfreeBE.userRegistration.controller;
 
+import com.example.breakfreeBE.avatar.dto.AvatarUpdateRequest;
 import com.example.breakfreeBE.avatar.entity.Avatar;
 import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.common.MetaResponse;
@@ -125,29 +126,34 @@ public class UserController {
         ));
     }
 
-    // GET /users/{userId}/avatar
-    @GetMapping("/{userId}/avatar")
+    @GetMapping("/avatar/view/{userId}")
     public ResponseEntity<BaseResponse<Avatar>> getUserAvatar(@PathVariable String userId) {
         try {
             Avatar avatar = userService.getUserAvatar(userId);
+
+            if (avatar == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                        new BaseResponse<>(new MetaResponse(false, "Avatar not found"), null)
+                );
+            }
+
             return ResponseEntity.ok(new BaseResponse<>(
                     new MetaResponse(true, "Avatar retrieved successfully"), avatar
             ));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new BaseResponse<>(new MetaResponse(false, e.getMessage()), null)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new BaseResponse<>(new MetaResponse(false, "Internal Server Error: " + e.getMessage()), null)
             );
         }
     }
 
-    // PUT /users/{userId}/avatar/{avatarId}
-    @PutMapping("/{userId}/avatar/{avatarId}")
+
+    @PutMapping("/avatar/update")
     public ResponseEntity<BaseResponse<String>> updateUserAvatar(
-            @PathVariable String userId,
-            @PathVariable String avatarId
+            @RequestBody AvatarUpdateRequest request
     ) {
         try {
-            userService.updateUserAvatar(userId, avatarId);
+            userService.updateUserAvatar(request.userId, request.avatarId);
             return ResponseEntity.ok(new BaseResponse<>(
                     new MetaResponse(true, "Avatar updated successfully"), "Avatar updated"
             ));
@@ -158,15 +164,12 @@ public class UserController {
         }
     }
 
-    // POST /users/{userId}/avatar
-    @PostMapping("/{userId}/avatar")
+    @PostMapping("/avatar/add")
     public ResponseEntity<BaseResponse<String>> addAvatarToUser(
-            @PathVariable String userId,
-            @RequestBody Map<String, String> body
+            @RequestBody AvatarUpdateRequest request
     ) {
         try {
-            String avatarId = body.get("avatarId");
-            userService.updateUserAvatar(userId, avatarId);  // reuse existing method
+            userService.updateUserAvatar(request.userId, request.avatarId);  // reuse method
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     new BaseResponse<>(new MetaResponse(true, "Avatar added to user"), "Avatar added")
             );
