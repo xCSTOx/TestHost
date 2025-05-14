@@ -50,7 +50,7 @@ public class AddictionController {
     public ResponseEntity<BaseResponse<Map<String, Object>>> getFunFactSaver(@RequestBody AddictionDTO requestDto) {
         if (requestDto.getUserId() == null || requestDto.getUserId().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new BaseResponse<>(new MetaResponse(false, "User ID is required"), null)
+                    new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
             );
         }
 
@@ -68,7 +68,7 @@ public class AddictionController {
         responseData.put("color", savingFunFact.bgColor);
 
         return ResponseEntity.ok(
-                new BaseResponse<>(new MetaResponse(true, "Fun fact calculated successfully"), responseData)
+                new BaseResponse<>(new MetaResponse(true, "Successfully create funfact saving"), responseData)
         );
     }
 
