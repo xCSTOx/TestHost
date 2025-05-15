@@ -7,7 +7,9 @@ import com.example.breakfreeBE.addiction.repository.AddictionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -103,14 +105,18 @@ public class AddictionService {
     public StreakFunFact getSavingFunFact(String userId) {
         List<AddictionDTO> addictions = getAddictionsByUser(userId);
         if (addictions.isEmpty()) {
-            // Tidak ada data, kembalikan null
             return null;
         }
         long totalSaved = 0;
 
         for (AddictionDTO addiction : addictions) {
             if (addiction.getStartDate() != null && addiction.getSaver() != null) {
-                long daysPassed = ChronoUnit.DAYS.between(addiction.getStartDate(), LocalDate.now());
+                // Konversi timestamp ke LocalDate untuk perhitungan
+                LocalDate startDate = Instant.ofEpochMilli(addiction.getStartDate())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+
+                long daysPassed = ChronoUnit.DAYS.between(startDate, LocalDate.now());
                 totalSaved += daysPassed * addiction.getSaver();
             }
         }
@@ -190,7 +196,12 @@ public class AddictionService {
         return addiction;
     }
 
-    // Mendapatkan Addiction berdasarkan UserId dan mengembalikan dalam bentuk AddictionDTO
+    public Optional<AddictionDTO> getAddictionByUserIdAndAddictionId(String userId, String addictionId) {
+        AddictionId id = new AddictionId(userId, addictionId);
+        return addictionRepository.findById(id)
+                .map(this::convertToDTO);
+    }
+
     public List<AddictionDTO> getAddictionsByUser(String userId) {
         List<Addiction> addictions = addictionRepository.findAddictionsByUserId(userId);
         return addictions.stream()
@@ -226,18 +237,38 @@ public class AddictionService {
 
     // Mereset Addiction dan mengembalikan AddictionDTO
     public Optional<AddictionDTO> resetAddiction(AddictionDTO dto) {
-        Addiction addiction = convertToEntity(dto); // convert DTO ke Addiction entity
+        Addiction addiction = convertToEntity(dto);
         return addictionRepository.findById(new AddictionId(addiction.getUserId(), addiction.getAddictionId()))
                 .map(existingAddiction -> {
-                    LocalDate oldStartDate = existingAddiction.getStartDate();
-                    LocalDate newStartDate = LocalDate.now();
-                    long duration = ChronoUnit.DAYS.between(oldStartDate, newStartDate);
-                    existingAddiction.setStreaks(duration);
-                    existingAddiction.setStartDate(newStartDate);
+                    // Ambil startDate lama
+                    long oldStartTimestamp = existingAddiction.getStartDate();
+
+                    // Konversi ke LocalDate
+                    LocalDate oldStartDate = Instant.ofEpochMilli(oldStartTimestamp)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate();
+
+                    LocalDate now = LocalDate.now();
+                    long calculatedStreak = ChronoUnit.DAYS.between(oldStartDate, now);
+
+                    // Ambil streak sebelumnya, jika null maka dianggap 0
+                    Long previousStreak = existingAddiction.getStreaks();
+                    long previous = previousStreak != null ? previousStreak : 0;
+
+                    // Jika streak baru lebih besar, update
+                    if (calculatedStreak > previous) {
+                        existingAddiction.setStreaks(calculatedStreak);
+                    }
+
+                    // Tetap reset startDate ke sekarang
+                    existingAddiction.setStartDate(System.currentTimeMillis());
+
                     Addiction resetAddiction = addictionRepository.save(existingAddiction);
-                    return convertToDTO(resetAddiction); // Mengembalikan AddictionDTO
+                    return convertToDTO(resetAddiction);
                 });
     }
+
+
 
     // Menghapus Addiction dan mengembalikan status sukses
     public boolean deleteAddiction(AddictionDTO dto) {

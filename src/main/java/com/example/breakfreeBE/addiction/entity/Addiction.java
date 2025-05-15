@@ -41,6 +41,6 @@ public class Addiction {
     private String motivation;
 
     @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    private Long startDate;
 
 }
