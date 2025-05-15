@@ -33,7 +33,14 @@ public class UserService {
         String hashedPassword = passwordEncoder.encode(password);
         String newUserId = generateNextUserId();
 
+        // Ambil Avatar default
+        Avatar defaultAvatar = avatarRepository.findById("AR0001")
+                .orElseThrow(() -> new RuntimeException("Default avatar not found"));
+
+        // Buat user baru dan set avatar
         User newUser = new User(newUserId, username, hashedPassword);
+        newUser.setAvatar(defaultAvatar); // <--- ini penting
+
         return userRepository.save(newUser);
     }
 
