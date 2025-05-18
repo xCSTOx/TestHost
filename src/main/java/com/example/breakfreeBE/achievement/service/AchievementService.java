@@ -24,7 +24,7 @@ public class AchievementService {
     }
 
     public List<AchievementResponse> getAchievementsByUserId(String userId) {
-        List<AchievementUser> userAchievements = achievementUserRepository.findByIdUserId(userId);
+        List<AchievementUser> userAchievements = achievementUserRepository.findById_UserId(userId);
 
         return userAchievements.stream()
                 .map(achievementUser -> achievementUser.getAchievement())

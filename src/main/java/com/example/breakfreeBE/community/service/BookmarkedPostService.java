@@ -1,6 +1,7 @@
 package com.example.breakfreeBE.community.service;
 
 import com.example.breakfreeBE.community.dto.BookmarkedRequestDTO;
+import com.example.breakfreeBE.community.dto.PostDTO;
 import com.example.breakfreeBE.community.entity.BookmarkedPost;
 import com.example.breakfreeBE.community.entity.Post;
 import com.example.breakfreeBE.community.repository.BookmarkedPostRepository;
@@ -21,11 +22,9 @@ public class BookmarkedPostService {
     @Autowired
     private PostRepository postRepository;
 
-    /**
-     * Bookmark a post
-     * @param bookmarkRequest containing userId and postId
-     * @return true if bookmark was successful, false if already bookmarked
-     */
+    @Autowired
+    private PostService postService;
+
     public boolean bookmarkPost(BookmarkedRequestDTO bookmarkRequest) {
         // Check if already bookmarked
         if (bookmarkedPostRepository.existsByUserIdAndPostId(
@@ -43,11 +42,6 @@ public class BookmarkedPostService {
         return true;
     }
 
-    /**
-     * Remove a bookmark
-     * @param bookmarkRequest containing userId and postId
-     * @return true if unbookmark was successful, false if not found
-     */
     @Transactional
     public boolean unbookmarkPost(BookmarkedRequestDTO bookmarkRequest) {
         if (!bookmarkedPostRepository.existsByUserIdAndPostId(
@@ -60,20 +54,19 @@ public class BookmarkedPostService {
         return true;
     }
 
-    /**
-     * View all bookmarked posts for a user
-     * @param userId the user ID
-     * @return List of posts that were bookmarked
-     */
-    public List<Post> viewBookmarkedPosts(String userId) {
+    public List<PostDTO> viewBookmarkedPosts(String userId) {
         List<BookmarkedPost> bookmarks = bookmarkedPostRepository.findByUserId(userId);
-        List<Post> posts = new ArrayList<>();
+        List<PostDTO> result = new ArrayList<>();
 
         for (BookmarkedPost bookmark : bookmarks) {
-            // Use the existing findById method from PostRepository
-            postRepository.findById(bookmark.getPostId()).ifPresent(posts::add);
+            postRepository.findById(bookmark.getPostId()).ifPresent(post -> {
+                PostDTO dto = postService.convertToDTOP(post); // <-- pakai convert dari PostService
+                if (dto.isBookmarked()) { // filter yang benar-benar bookmarked
+                    result.add(dto);
+                }
+            });
         }
 
-        return posts;
+        return result;
     }
 }

@@ -1,11 +1,19 @@
 package com.example.breakfreeBE.addiction.service;
 
+import com.example.breakfreeBE.achievement.entity.AchievementUser;
+import com.example.breakfreeBE.achievement.entity.AchievementUserId;
+import com.example.breakfreeBE.userRegistration.entity.User;
+import com.example.breakfreeBE.achievement.entity.Achievement;
+import com.example.breakfreeBE.achievement.repository.AchievementRepository;
+import com.example.breakfreeBE.achievement.repository.AchievementUserRepository;
 import com.example.breakfreeBE.addiction.dto.AddictionDTO;
 import com.example.breakfreeBE.addiction.entity.Addiction;
 import com.example.breakfreeBE.addiction.entity.AddictionId;
 import com.example.breakfreeBE.addiction.repository.AddictionRepository;
+import com.example.breakfreeBE.userRegistration.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -20,6 +28,19 @@ public class AddictionService {
 
     @Autowired
     private AddictionRepository addictionRepository;
+    private UserRepository userRepository;
+    private AchievementUserRepository achievementUserRepository;
+    private AchievementRepository achievementRepository;
+
+    public AddictionService(AddictionRepository addictionRepository,
+                            AchievementRepository achievementRepository,
+                            AchievementUserRepository achievementUserRepository,
+                            UserRepository userRepository) {
+        this.addictionRepository = addictionRepository;
+        this.achievementRepository = achievementRepository;
+        this.achievementUserRepository = achievementUserRepository;
+        this.userRepository = userRepository;
+    }
 
     // Konversi entity Addiction ke DTO AddictionDTO
     private AddictionDTO convertToDTO(Addiction addiction) {
@@ -211,12 +232,45 @@ public class AddictionService {
 
     // Menyimpan Addiction baru dan mengembalikan AddictionDTO
     public Optional<AddictionDTO> saveAddiction(AddictionDTO dto) {
-        Addiction addiction = convertToEntity(dto); // convert DTO ke Addiction entity
+        Addiction addiction = convertToEntity(dto);
+
+        // Cek jika sudah pernah ada addiction untuk user ini
+        boolean isFirstAddiction = !addictionRepository.existsByUserId(dto.getUserId());
+
         if (addictionRepository.existsById(new AddictionId(addiction.getUserId(), addiction.getAddictionId()))) {
-            return Optional.empty(); // Addiction sudah ada
+            return Optional.empty(); // Sudah ada addiction ini
         }
+
         Addiction savedAddiction = addictionRepository.save(addiction);
-        return Optional.of(convertToDTO(savedAddiction)); // Mengembalikan AddictionDTO
+
+        // === Tambahan untuk Achievement ===
+        if (isFirstAddiction) {
+            String achievementId = "AC0003"; // Day One Warrior
+            boolean alreadyHas = achievementUserRepository.existsById_UserIdAndId_AchievementId(dto.getUserId(), achievementId);
+
+            if (!alreadyHas) {
+                User user = userRepository.findById(dto.getUserId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+                Achievement achievement = achievementRepository.findById(achievementId)
+                        .orElseThrow(() -> new RuntimeException("Achievement not found"));
+                AchievementUserId achievementUserId = new AchievementUserId();
+                achievementUserId.setUserId(dto.getUserId());
+                achievementUserId.setAchievementId(achievementId);
+
+// 3. Set ke entitas AchievementUser
+                AchievementUser achievementUser = new AchievementUser();
+                achievementUser.setId(achievementUserId);
+                achievementUser.setUser(user);
+                achievementUser.setAchievement(achievement);
+                achievementUser.setAchievementDate(System.currentTimeMillis());
+
+// 4. Simpan ke DB
+                achievementUserRepository.save(achievementUser);
+            }
+        }
+
+        return Optional.of(convertToDTO(savedAddiction));
     }
 
     // Mengupdate Addiction dan mengembalikan AddictionDTO

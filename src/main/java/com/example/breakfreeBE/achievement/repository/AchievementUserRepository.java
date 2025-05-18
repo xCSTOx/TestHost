@@ -10,7 +10,11 @@ import java.util.List;
 @Repository
 public interface AchievementUserRepository extends JpaRepository<AchievementUser, AchievementUserId> {
 
-    List<AchievementUser> findByIdUserId(String userId);
+    List<AchievementUser> findById_UserId(String userId);
 
-    List<AchievementUser> findByIdAchievementId(String achievementId);
+    // Perbaikan untuk mengecek keberadaan berdasarkan userId dan achievementId dalam ID komposit
+    boolean existsById_UserIdAndId_AchievementId(String userId, String achievementId);
+
+    // Perbaikan untuk mencari berdasarkan achievementId dalam ID komposit
+    List<AchievementUser> findById_AchievementId(String achievementId);
 }

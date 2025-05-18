@@ -1,9 +1,14 @@
 package com.example.breakfreeBE.addiction.controller;
 
+import com.example.breakfreeBE.achievement.entity.Achievement;
+import com.example.breakfreeBE.achievement.repository.AchievementRepository;
+import com.example.breakfreeBE.achievement.repository.AchievementUserRepository;
 import com.example.breakfreeBE.addiction.dto.AddictionDTO;
+import com.example.breakfreeBE.addiction.repository.AddictionRepository;
 import com.example.breakfreeBE.addiction.service.AddictionService;
 import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.common.MetaResponse;
+import com.example.breakfreeBE.userRegistration.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +27,21 @@ import java.util.Optional;
 @RequestMapping("/addictions")
 public class AddictionController {
 
-    @Autowired
+
     private AddictionService addictionService;
+    private AchievementUserRepository achievementUserRepository;
+    private AchievementRepository achievementRepository;
+    private AddictionRepository addictionRepository;
+    private UserRepository userRepository;
+
+    @Autowired
+    public AddictionController(AddictionService addictionService, AchievementUserRepository achievementUserRepository, AchievementRepository achievementRepository, AddictionRepository addictionRepository, UserRepository userRepository) {
+        this.addictionService = addictionService;
+        this.achievementUserRepository = achievementUserRepository;
+        this.achievementRepository = achievementRepository;
+        this.addictionRepository = addictionRepository;
+        this.userRepository = userRepository;
+    }
 
     @PostMapping("/one")
     public ResponseEntity<BaseResponse<Map<String, Object>>> getOneAddiction(@RequestBody AddictionDTO requestDto) {
@@ -48,7 +66,6 @@ public class AddictionController {
         // Create a map with only the required fields
         Map<String, Object> oneResponse = new HashMap<>();
         oneResponse.put("saver", foundAddiction.getSaver());
-        oneResponse.put("streaks", foundAddiction.getStreaks());
         oneResponse.put("motivation", foundAddiction.getMotivation());
         oneResponse.put("startDate", foundAddiction.getStartDate());
         oneResponse.put("addictionName", foundAddiction.getAddictionName());
@@ -70,13 +87,20 @@ public class AddictionController {
 
         for (AddictionDTO addiction : addictions) {
             if (addiction.getStartDate() != null) {
-                // Konversi timestamp ke LocalDate untuk perhitungan
+                // Konversi timestamp ke LocalDate
                 LocalDate startDate = Instant.ofEpochMilli(addiction.getStartDate())
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate();
 
-                long streakDays = ChronoUnit.DAYS.between(startDate, LocalDate.now());
-                AddictionService.StreakFunFact streakFact = addictionService.getStreakFunFact(streakDays);
+                long currentStreak = ChronoUnit.DAYS.between(startDate, LocalDate.now());
+                addiction.setCurrentStreak(currentStreak);
+
+                // Bandingkan dengan streak tersimpan (bisa null)
+                Long savedStreak = addiction.getStreaks();
+                long longestStreak = (savedStreak != null) ? Math.max(savedStreak, currentStreak) : currentStreak;
+                addiction.setLongestStreak(longestStreak);
+
+                AddictionService.StreakFunFact streakFact = addictionService.getStreakFunFact(currentStreak);
                 addiction.setStreakFunFact(streakFact);
             }
         }
@@ -113,7 +137,7 @@ public class AddictionController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<BaseResponse<Map<String, String>>> createAddiction(@RequestBody AddictionDTO dto) {
+    public ResponseEntity<BaseResponse<Map<String, Object>>> createAddiction(@RequestBody AddictionDTO dto) {
         if (dto.getUserId() == null || dto.getUserId().isBlank() ||
                 dto.getAddictionId() == null || dto.getAddictionId().isBlank() ||
                 dto.getStartDate() == null ||
@@ -133,13 +157,33 @@ public class AddictionController {
             );
         }
 
-        Map<String, String> responseData = new HashMap<>();
+        Map<String, Object> responseData = new HashMap<>();
         responseData.put("addictionId", newAddiction.get().getAddictionId());
+
+        // Cek apakah ini addiction pertama untuk user
+        long addictionCount = addictionRepository.countByUserId(dto.getUserId());
+        boolean isFirstAddiction = addictionCount == 1;
+
+        if (isFirstAddiction) {
+            String achievementId = "AC0003";
+            Optional<Achievement> achOpt = achievementRepository.findById(achievementId);
+            if (achOpt.isPresent()) {
+                Achievement ach = achOpt.get();
+
+                Map<String, String> achievementMap = new HashMap<>();
+                achievementMap.put("achievementId", ach.getAchievementId());
+                achievementMap.put("achievementName", ach.getAchievementName());
+                achievementMap.put("achievementUrl", ach.getAchievementUrl());
+
+                responseData.put("achievement", achievementMap);
+            }
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 new BaseResponse<>(new MetaResponse(true, "Addiction record created successfully"), responseData)
         );
     }
+
 
     @PutMapping("/update")
     public ResponseEntity<BaseResponse<Map<String, String>>> updateAddiction(@RequestBody AddictionDTO dto) {

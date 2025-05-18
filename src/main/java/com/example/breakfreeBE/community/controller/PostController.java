@@ -2,7 +2,7 @@ package com.example.breakfreeBE.community.controller;
 
 import com.example.breakfreeBE.community.service.PostService;
 import com.example.breakfreeBE.community.dto.PostDTO;
-import com.example.breakfreeBE.community.dto.PostDetailDTO;
+import com.example.breakfreeBE.community.dto.PostRequestDTO;
 import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.common.MetaResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,16 +36,16 @@ public class PostController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<BaseResponse<Map<String, String>>> createPost(@RequestBody PostDTO postDTO) {
+    public ResponseEntity<BaseResponse<Map<String, String>>> createPost(@RequestBody PostRequestDTO postRequestDTO) {
         try {
-            // Validasi field-field yang diperlukan
-            if (postDTO.getUserId() == null || postDTO.getPostText() == null || postDTO.getUserId().isBlank() || postDTO.getPostText().isBlank()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
+            if (postRequestDTO.getUserId() == null || postRequestDTO.getPostText() == null
+                    || postRequestDTO.getUserId().isBlank() || postRequestDTO.getPostText().isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new BaseResponse<>(new MetaResponse(false, "Invalid request: userId or postText missing"), null)
                 );
             }
 
-            PostDTO createdPost = postService.createPost(postDTO);
+            PostDTO createdPost = postService.createPost(postRequestDTO);
 
             Map<String, String> responseData = new HashMap<>();
             responseData.put("postId", createdPost.getPostId());
@@ -54,7 +54,7 @@ public class PostController {
                     new BaseResponse<>(new MetaResponse(true, "Post created successfully"), responseData)
             );
         } catch (Exception e) {
-            e.printStackTrace(); // atau pakai logger
+            e.printStackTrace(); // or use logger
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     new BaseResponse<>(new MetaResponse(false, "Failed to create post: " + e.getMessage()), null)
             );
@@ -68,8 +68,8 @@ public class PostController {
             String userId = requestBody.get("userId");
 
             if (postId == null || userId == null || postId.isBlank() || userId.isBlank()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new BaseResponse<>(new MetaResponse(false, "Invalid request: postId or userId missing"), null)
                 );
             }
 
@@ -86,16 +86,17 @@ public class PostController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<BaseResponse<Void>> updatePost(@RequestBody PostDTO postDTO) {
+    public ResponseEntity<BaseResponse<Void>> updatePost(@RequestBody PostRequestDTO postRequestDTO) {
         try {
-            // Validasi field-field yang diperlukan
-            if (postDTO.getPostId() == null || postDTO.getUserId() == null || postDTO.getPostText() == null || postDTO.getPostId().isBlank() || postDTO.getUserId().isBlank() || postDTO.getPostText().isBlank()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
+            // Validate required fields
+            if (postRequestDTO.getUserId() == null || postRequestDTO.getPostText() == null
+                    || postRequestDTO.getUserId().isBlank() || postRequestDTO.getPostText().isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new BaseResponse<>(new MetaResponse(false, "Post Not Found"), null)
                 );
             }
 
-            PostDTO updatedPost = postService.updatePost(postDTO);
+            PostDTO updatedPost = postService.updatePost(postRequestDTO);
             return ResponseEntity.ok(
                     new BaseResponse<>(new MetaResponse(true, "Post updated successfully"), null)
             );
@@ -107,18 +108,18 @@ public class PostController {
     }
 
     @PostMapping("/viewdetail")
-    public ResponseEntity<BaseResponse<PostDetailDTO>> viewPostDetail(@RequestBody Map<String, String> requestBody) {
+    public ResponseEntity<BaseResponse<PostDTO>> viewPostDetail(@RequestBody Map<String, String> requestBody) {
         try {
             String postId = requestBody.get("postId");
             String userId = requestBody.get("userId");
 
             if (postId == null || userId == null || postId.isBlank() || userId.isBlank()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new BaseResponse<>(new MetaResponse(false, "Invalid request: postId or userId missing"), null)
                 );
             }
 
-            PostDetailDTO postDetail = postService.getPostDetailsById(postId, userId);
+            PostDTO postDetail = postService.getPostDetailsById(postId, userId);
 
             return ResponseEntity.ok(
                     new BaseResponse<>(new MetaResponse(true, "Post details retrieved successfully"), postDetail)
@@ -136,8 +137,8 @@ public class PostController {
             String userId = requestBody.get("userId");
 
             if (userId == null || userId.isBlank()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new BaseResponse<>(new MetaResponse(false, "Post not found"), null)
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new BaseResponse<>(new MetaResponse(false, "Invalid request: userId missing"), null)
                 );
             }
 

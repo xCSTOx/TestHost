@@ -25,7 +25,6 @@ public class CommentController {
     @PostMapping("/create")
     public ResponseEntity<BaseResponse<Map<String, String>>> createComment(@RequestBody CommentDTO commentDTO) {
         try {
-            // Validasi field-field yang diperlukan
             if (commentDTO.getPostId() == null || commentDTO.getUserId() == null || commentDTO.getCommentText() == null || commentDTO.getPostId().isBlank() || commentDTO.getUserId().isBlank() || commentDTO.getCommentText().isBlank() ) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Comment not found"), null)
@@ -34,7 +33,6 @@ public class CommentController {
 
             CommentDTO createdComment = commentService.createComment(commentDTO);
 
-            // Mengembalikan commentId dalam respons
             Map<String, String> responseData = new HashMap<>();
             responseData.put("commentId", createdComment.getCommentId());
 
@@ -52,7 +50,6 @@ public class CommentController {
     @PostMapping("/view")
     public ResponseEntity<BaseResponse<List<CommentDTO>>> getCommentsByPost(@RequestBody CommentDTO commentDTO) {
         try {
-            // Validasi field yang diperlukan
             if (commentDTO.getPostId() == null || commentDTO.getPostId().isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Comment not found"), null)
@@ -60,10 +57,6 @@ public class CommentController {
             }
 
             List<CommentDTO> comments = commentService.getCommentsByPost(commentDTO.getPostId());
-
-            // Memastikan setiap CommentDTO hanya berisi username dan commentText
-            // Ini tergantung implementasi DTO dan service Anda
-            // Jika perlu filter data di controller, bisa ditambahkan di sini
 
             return ResponseEntity.ok(
                     new BaseResponse<>(new MetaResponse(true, "Comments retrieved successfully"), comments)

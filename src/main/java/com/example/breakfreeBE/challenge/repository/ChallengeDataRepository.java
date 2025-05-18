@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface ChallengeDataRepository extends JpaRepository<ChallengeData, String> {
-    Optional<ChallengeData> findById(String challengeId);
+
 }

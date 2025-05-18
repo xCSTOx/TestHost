@@ -1,6 +1,7 @@
 package com.example.breakfreeBE.community.controller;
 
 import com.example.breakfreeBE.community.dto.BookmarkedRequestDTO;
+import com.example.breakfreeBE.community.dto.PostDTO;
 import com.example.breakfreeBE.community.entity.Post;
 import com.example.breakfreeBE.community.service.BookmarkedPostService;
 import com.example.breakfreeBE.common.BaseResponse;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/bookmarks")
@@ -79,21 +81,20 @@ public class BookmarkedPostController {
     }
 
     @PostMapping("/view")
-    public ResponseEntity<BaseResponse<List<Post>>> viewBookmarkedPosts(@RequestBody Map<String, String> request) {
+    public ResponseEntity<BaseResponse<List<PostDTO>>> viewBookmarkedPosts(@RequestBody Map<String, String> request) {
         try {
             String userId = request.get("userId");
 
-            // Validasi field yang diperlukan
             if (userId == null || userId.isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new BaseResponse<>(new MetaResponse(false, "Bookmark not found"), null)
+                        new BaseResponse<>(new MetaResponse(false, "Bookmark not found: userId is missing"), null)
                 );
             }
 
-            List<Post> bookmarkedPosts = bookmarkedPostService.viewBookmarkedPosts(userId);
+            List<PostDTO> bookmarkedDTOs = bookmarkedPostService.viewBookmarkedPosts(userId);
 
             return ResponseEntity.ok(
-                    new BaseResponse<>(new MetaResponse(true, "Bookmarked posts retrieved successfully"), bookmarkedPosts)
+                    new BaseResponse<>(new MetaResponse(true, "Bookmarked posts retrieved successfully"), bookmarkedDTOs)
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
@@ -101,4 +102,6 @@ public class BookmarkedPostController {
             );
         }
     }
+
+
 }

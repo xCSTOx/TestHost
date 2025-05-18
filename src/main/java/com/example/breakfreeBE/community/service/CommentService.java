@@ -1,5 +1,7 @@
 package com.example.breakfreeBE.community.service;
 
+import com.example.breakfreeBE.avatar.entity.Avatar;
+import com.example.breakfreeBE.avatar.repository.AvatarRepository;
 import com.example.breakfreeBE.community.dto.CommentDTO;
 import com.example.breakfreeBE.community.entity.Comment;
 import com.example.breakfreeBE.community.entity.Post;
@@ -11,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,6 +30,8 @@ public class CommentService {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private AvatarRepository avatarRepository;
 
     // Create a new comment
     @Transactional
@@ -44,7 +48,7 @@ public class CommentService {
         comment.setPostId(commentDTO.getPostId());
         comment.setUserId(commentDTO.getUserId());
         comment.setCommentText(commentDTO.getCommentText());
-        comment.setCommentDate(LocalDate.now()); // Current date
+        comment.setCommentDate(Instant.now().toEpochMilli());
 
         // Save comment
         Comment savedComment = commentRepository.save(comment);
@@ -83,9 +87,18 @@ public class CommentService {
         dto.setCommentText(comment.getCommentText());
         dto.setCommentDate(comment.getCommentDate());
 
-        // Fetch username from User repository
         Optional<User> user = userRepository.findById(comment.getUserId());
-        user.ifPresent(u -> dto.setUsername(u.getUsername()));
+        if (user.isPresent()) {
+            User userEntity = user.get();
+            dto.setUsername(userEntity.getUsername());
+
+            // Fetch avatar URL if avatar ID exists
+            String avatarId = userEntity.getAvatarId();
+            if (avatarId != null) {
+                Optional<Avatar> avatar = avatarRepository.findById(avatarId);
+                avatar.ifPresent(a -> dto.setAvatarUrl(a.getAvatarUrl()));
+            }
+        }
 
         return dto;
     }
