@@ -18,29 +18,21 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/addictions")
 public class AddictionController {
 
-
     private AddictionService addictionService;
-    private AchievementUserRepository achievementUserRepository;
     private AchievementRepository achievementRepository;
     private AddictionRepository addictionRepository;
-    private UserRepository userRepository;
 
     @Autowired
-    public AddictionController(AddictionService addictionService, AchievementUserRepository achievementUserRepository, AchievementRepository achievementRepository, AddictionRepository addictionRepository, UserRepository userRepository) {
+    public AddictionController(AddictionService addictionService, AchievementRepository achievementRepository, AddictionRepository addictionRepository) {
         this.addictionService = addictionService;
-        this.achievementUserRepository = achievementUserRepository;
         this.achievementRepository = achievementRepository;
         this.addictionRepository = addictionRepository;
-        this.userRepository = userRepository;
     }
 
     @PostMapping("/one")
@@ -76,7 +68,7 @@ public class AddictionController {
     }
 
     @PostMapping("/view")
-    public ResponseEntity<BaseResponse<List<AddictionDTO>>> getAddictionsByUser(@RequestBody AddictionDTO requestDto) {
+    public ResponseEntity<BaseResponse<Map<String, Object>>> getAddictionsByUser(@RequestBody AddictionDTO requestDto) {
         if (requestDto.getUserId() == null || requestDto.getUserId().isBlank()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
@@ -84,7 +76,13 @@ public class AddictionController {
         }
 
         List<AddictionDTO> addictions = addictionService.getAddictionsByUser(requestDto.getUserId());
+        List<Map<String, Object>> newAchievements = new ArrayList<>();
 
+        // Create response data map
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("addictions", addictions);
+
+        // Process all addictions to update their current streak and longest streak
         for (AddictionDTO addiction : addictions) {
             if (addiction.getStartDate() != null) {
                 // Konversi timestamp ke LocalDate
@@ -105,8 +103,19 @@ public class AddictionController {
             }
         }
 
+        // Process streak achievements after updating all addictions
+        Map<String, Object> highestAchievement = addictionService.processStreakAchievements(
+                requestDto.getUserId(),
+                addictions
+        );
+
+        // Add the highest achievement to the response if one exists
+        if (highestAchievement != null) {
+            responseData.put("achievement", highestAchievement); // Note: Using singular "achievement" now
+        }
+
         return ResponseEntity.ok(
-                new BaseResponse<>(new MetaResponse(true, "Addiction list retrieved successfully"), addictions)
+                new BaseResponse<>(new MetaResponse(true, "Addiction list retrieved successfully"), responseData)
         );
     }
 
@@ -199,16 +208,38 @@ public class AddictionController {
     }
 
     @PatchMapping("/reset")
-    public ResponseEntity<BaseResponse<Map<String, String>>> resetAddiction(@RequestBody AddictionDTO dto) {
-        Optional<AddictionDTO> resetAddiction = addictionService.resetAddiction(dto);
+    public ResponseEntity<BaseResponse<Map<String, Object>>> resetAddiction(@RequestBody AddictionDTO dto) {
+        try {
+            Map<String, Object> result = addictionService.resetAddiction(dto);
 
-        if (resetAddiction.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
+            if (result == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                        new BaseResponse<>(new MetaResponse(false, "Addiction not found"), null)
+                );
+            }
+
+            Map<String, Object> responseData = new HashMap<>();
+
+            // If a new achievement was earned, include it in the response
+            if (result.containsKey("achievement")) {
+                responseData.put("achievement", result.get("achievement"));
+
+                return ResponseEntity.ok(new BaseResponse<>(
+                        new MetaResponse(true, "Addiction reset successfully and achievement earned!"),
+                        responseData
+                ));
+            }
+
+            return ResponseEntity.ok(new BaseResponse<>(
+                    new MetaResponse(true, "Addiction reset successfully"),
+                    responseData
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new BaseResponse<>(new MetaResponse(false, "Failed to reset addiction: " + e.getMessage()), null)
             );
         }
-
-        return ResponseEntity.ok(new BaseResponse<>(new MetaResponse(true, "Addiction reset successfully"), null));
     }
 
     @DeleteMapping("/delete")

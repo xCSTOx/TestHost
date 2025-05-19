@@ -19,23 +19,19 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class AddictionService {
 
-    @Autowired
     private AddictionRepository addictionRepository;
     private UserRepository userRepository;
     private AchievementUserRepository achievementUserRepository;
     private AchievementRepository achievementRepository;
 
-    public AddictionService(AddictionRepository addictionRepository,
-                            AchievementRepository achievementRepository,
-                            AchievementUserRepository achievementUserRepository,
-                            UserRepository userRepository) {
+    @Autowired
+    public AddictionService(AddictionRepository addictionRepository, AchievementRepository achievementRepository, AchievementUserRepository achievementUserRepository, UserRepository userRepository) {
         this.addictionRepository = addictionRepository;
         this.achievementRepository = achievementRepository;
         this.achievementUserRepository = achievementUserRepository;
@@ -230,7 +226,116 @@ public class AddictionService {
                 .collect(Collectors.toList());
     }
 
-    // Menyimpan Addiction baru dan mengembalikan AddictionDTO
+    public Map<String, Object> processStreakAchievements(String userId, List<AddictionDTO> addictions) {
+        List<Map<String, Object>> allNewAchievements = new ArrayList<>();
+
+        // Check each addiction for streak-based achievements
+        for (AddictionDTO addiction : addictions) {
+            if (addiction.getStartDate() != null) {
+                LocalDate startDate = Instant.ofEpochMilli(addiction.getStartDate())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+
+                long currentStreak = ChronoUnit.DAYS.between(startDate, LocalDate.now());
+                addiction.setCurrentStreak(currentStreak);
+
+                // Check for all possible streak achievements
+                if (currentStreak >= 365) {
+                    Map<String, Object> achievementData = checkAndAddAchievement(userId, "AC0009"); // Legendary Self-Control
+                    if (achievementData != null) {
+                        allNewAchievements.add(achievementData);
+                    }
+                }
+
+                if (currentStreak >= 100) {
+                    Map<String, Object> achievementData = checkAndAddAchievement(userId, "AC0012"); // Unbreakable Streak
+                    if (achievementData != null) {
+                        allNewAchievements.add(achievementData);
+                    }
+                }
+
+                if (currentStreak >= 50) {
+                    Map<String, Object> achievementData = checkAndAddAchievement(userId, "AC0015"); // Marathon Mode
+                    if (achievementData != null) {
+                        allNewAchievements.add(achievementData);
+                    }
+                }
+
+                if (currentStreak >= 10) {
+                    Map<String, Object> achievementData = checkAndAddAchievement(userId, "AC0004"); // Momentum Master
+                    if (achievementData != null) {
+                        allNewAchievements.add(achievementData);
+                    }
+                }
+            }
+        }
+
+        // Return only the highest achievement (if any)
+        return getHighestAchievement(allNewAchievements);
+    }
+
+    public Map<String, Object> getHighestAchievement(List<Map<String, Object>> achievements) {
+        if (achievements == null || achievements.isEmpty()) {
+            return null;
+        }
+
+        return achievements.stream()
+                .min(Comparator.comparing(achievement -> {
+                    String achievementId = (String) achievement.get("achievementId");
+                    switch (achievementId) {
+                        case "AC0009": return 1; // Legendary Self-Control (highest)
+                        case "AC0012": return 2; // Unbreakable Streak
+                        case "AC0015": return 3; // Marathon Mode
+                        case "AC0004": return 4; // Momentum Master (lowest)
+                        default: return Integer.MAX_VALUE;
+                    }
+                }))
+                .orElse(null);
+    }
+
+    public Map<String, Object> checkAndAddAchievement(String userId, String achievementId) {
+        // Check if user already has the achievement
+        boolean hasAchievement = achievementUserRepository.existsById_UserIdAndId_AchievementId(userId, achievementId);
+
+        if (!hasAchievement) {
+            // Get achievement details
+            Optional<Achievement> achievementOpt = achievementRepository.findById(achievementId);
+            if (achievementOpt.isPresent()) {
+                Achievement achievement = achievementOpt.get();
+
+                // Get user
+                Optional<User> userOpt = userRepository.findById(userId);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+
+                    // Create achievement user record
+                    AchievementUserId achievementUserId = new AchievementUserId();
+                    achievementUserId.setUserId(userId);
+                    achievementUserId.setAchievementId(achievementId);
+
+                    AchievementUser achievementUser = new AchievementUser();
+                    achievementUser.setId(achievementUserId);
+                    achievementUser.setUser(user);
+                    achievementUser.setAchievement(achievement);
+                    achievementUser.setAchievementDate(System.currentTimeMillis());
+
+                    // Save achievement
+                    achievementUserRepository.save(achievementUser);
+
+                    // Return achievement data for response
+                    Map<String, Object> achievementData = new HashMap<>();
+                    achievementData.put("achievementId", achievement.getAchievementId());
+                    achievementData.put("achievementName", achievement.getAchievementName());
+                    achievementData.put("achievementUrl", achievement.getAchievementUrl());
+
+                    return achievementData;
+                }
+            }
+        }
+        return null;
+    }
+
+        // Menyimpan Addiction baru dan mengembalikan AddictionDTO
     public Optional<AddictionDTO> saveAddiction(AddictionDTO dto) {
         Addiction addiction = convertToEntity(dto);
 
@@ -265,7 +370,6 @@ public class AddictionService {
                 achievementUser.setAchievement(achievement);
                 achievementUser.setAchievementDate(System.currentTimeMillis());
 
-// 4. Simpan ke DB
                 achievementUserRepository.save(achievementUser);
             }
         }
@@ -290,8 +394,10 @@ public class AddictionService {
     }
 
     // Mereset Addiction dan mengembalikan AddictionDTO
-    public Optional<AddictionDTO> resetAddiction(AddictionDTO dto) {
+    public Map<String, Object> resetAddiction(AddictionDTO dto) {
         Addiction addiction = convertToEntity(dto);
+        Map<String, Object> result = new HashMap<>();
+
         return addictionRepository.findById(new AddictionId(addiction.getUserId(), addiction.getAddictionId()))
                 .map(existingAddiction -> {
                     // Ambil startDate lama
@@ -318,13 +424,20 @@ public class AddictionService {
                     existingAddiction.setStartDate(System.currentTimeMillis());
 
                     Addiction resetAddiction = addictionRepository.save(existingAddiction);
-                    return convertToDTO(resetAddiction);
-                });
+
+                    // Prepare result
+                    result.put("addiction", convertToDTO(resetAddiction));
+
+                    Map<String, Object> achievementData = checkAndAddAchievement(addiction.getUserId(), "AC0005");
+                    if (achievementData != null) {
+                        result.put("achievement", achievementData);
+                    }
+
+                    return result;
+                })
+                .orElse(null);
     }
 
-
-
-    // Menghapus Addiction dan mengembalikan status sukses
     public boolean deleteAddiction(AddictionDTO dto) {
         Addiction addiction = convertToEntity(dto); // convert DTO ke Addiction entity
         AddictionId addictionId = new AddictionId(addiction.getUserId(), addiction.getAddictionId());

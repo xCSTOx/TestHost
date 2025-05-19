@@ -2,7 +2,6 @@ package com.example.breakfreeBE.community.controller;
 
 import com.example.breakfreeBE.community.dto.BookmarkedRequestDTO;
 import com.example.breakfreeBE.community.dto.PostDTO;
-import com.example.breakfreeBE.community.entity.Post;
 import com.example.breakfreeBE.community.service.BookmarkedPostService;
 import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.common.MetaResponse;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/bookmarks")
@@ -25,24 +23,43 @@ public class BookmarkedPostController {
     private BookmarkedPostService bookmarkedPostService;
 
     @PostMapping("/bookmark")
-    public ResponseEntity<BaseResponse<Void>> bookmarkPost(@RequestBody BookmarkedRequestDTO bookmarkRequest) {
+    public ResponseEntity<BaseResponse<Map<String, Object>>> bookmarkPost(@RequestBody BookmarkedRequestDTO bookmarkRequest) {
         try {
             // Validasi field-field yang diperlukan
-            if (bookmarkRequest.getUserId() == null || bookmarkRequest.getPostId() == null || bookmarkRequest.getUserId().isBlank() || bookmarkRequest.getPostId().isBlank()) {
+            if (bookmarkRequest.getUserId() == null || bookmarkRequest.getPostId() == null ||
+                    bookmarkRequest.getUserId().isBlank() || bookmarkRequest.getPostId().isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Bookmark not found"), null)
                 );
             }
 
-            boolean success = bookmarkedPostService.bookmarkPost(bookmarkRequest);
+            Map<String, Object> result = bookmarkedPostService.bookmarkPost(bookmarkRequest);
+            boolean success = (boolean) result.get("success");
+
+            Map<String, Object> responseData = new HashMap<>();
+
+            // If a new achievement was earned, include it in the response
+            if (result.containsKey("achievement")) {
+                responseData.put("achievement", result.get("achievement"));
+
+                if (success) {
+                    return ResponseEntity.status(HttpStatus.CREATED).body(
+                            new BaseResponse<>(new MetaResponse(true, "Post bookmarked successfully and achievement earned!"), responseData)
+                    );
+                } else {
+                    return ResponseEntity.ok(
+                            new BaseResponse<>(new MetaResponse(true, "Post is already bookmarked but achievement earned!"), responseData)
+                    );
+                }
+            }
 
             if (success) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(
-                        new BaseResponse<>(new MetaResponse(true, "Post bookmarked successfully"), null)
+                        new BaseResponse<>(new MetaResponse(true, "Post bookmarked successfully"), responseData)
                 );
             } else {
                 return ResponseEntity.ok(
-                        new BaseResponse<>(new MetaResponse(true, "Post is already bookmarked"), null)
+                        new BaseResponse<>(new MetaResponse(true, "Post is already bookmarked"), responseData)
                 );
             }
         } catch (Exception e) {
@@ -102,6 +119,4 @@ public class BookmarkedPostController {
             );
         }
     }
-
-
 }

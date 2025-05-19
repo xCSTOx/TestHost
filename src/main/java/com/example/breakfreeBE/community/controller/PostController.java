@@ -36,7 +36,7 @@ public class PostController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<BaseResponse<Map<String, String>>> createPost(@RequestBody PostRequestDTO postRequestDTO) {
+    public ResponseEntity<BaseResponse<Map<String, Object>>> createPost(@RequestBody PostRequestDTO postRequestDTO) {
         try {
             if (postRequestDTO.getUserId() == null || postRequestDTO.getPostText() == null
                     || postRequestDTO.getUserId().isBlank() || postRequestDTO.getPostText().isBlank()) {
@@ -45,16 +45,26 @@ public class PostController {
                 );
             }
 
-            PostDTO createdPost = postService.createPost(postRequestDTO);
+            Map<String, Object> result = postService.createPost(postRequestDTO);
+            PostDTO createdPost = (PostDTO) result.get("post");
 
-            Map<String, String> responseData = new HashMap<>();
+            Map<String, Object> responseData = new HashMap<>();
             responseData.put("postId", createdPost.getPostId());
+
+            // If a new achievement was earned, include it in the response
+            if (result.containsKey("achievement")) {
+                responseData.put("achievement", result.get("achievement"));
+
+                return ResponseEntity.status(HttpStatus.CREATED).body(
+                        new BaseResponse<>(new MetaResponse(true, "Post created successfully and achievement earned!"), responseData)
+                );
+            }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     new BaseResponse<>(new MetaResponse(true, "Post created successfully"), responseData)
             );
         } catch (Exception e) {
-            e.printStackTrace(); // or use logger
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     new BaseResponse<>(new MetaResponse(false, "Failed to create post: " + e.getMessage()), null)
             );
@@ -88,7 +98,6 @@ public class PostController {
     @PutMapping("/update")
     public ResponseEntity<BaseResponse<Void>> updatePost(@RequestBody PostRequestDTO postRequestDTO) {
         try {
-            // Validate required fields
             if (postRequestDTO.getUserId() == null || postRequestDTO.getPostText() == null
                     || postRequestDTO.getUserId().isBlank() || postRequestDTO.getPostText().isBlank()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -97,6 +106,7 @@ public class PostController {
             }
 
             PostDTO updatedPost = postService.updatePost(postRequestDTO);
+
             return ResponseEntity.ok(
                     new BaseResponse<>(new MetaResponse(true, "Post updated successfully"), null)
             );

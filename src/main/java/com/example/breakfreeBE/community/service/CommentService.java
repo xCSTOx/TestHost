@@ -1,5 +1,10 @@
 package com.example.breakfreeBE.community.service;
 
+import com.example.breakfreeBE.achievement.entity.Achievement;
+import com.example.breakfreeBE.achievement.entity.AchievementUser;
+import com.example.breakfreeBE.achievement.entity.AchievementUserId;
+import com.example.breakfreeBE.achievement.repository.AchievementRepository;
+import com.example.breakfreeBE.achievement.repository.AchievementUserRepository;
 import com.example.breakfreeBE.avatar.entity.Avatar;
 import com.example.breakfreeBE.avatar.repository.AvatarRepository;
 import com.example.breakfreeBE.community.dto.CommentDTO;
@@ -14,28 +19,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
 
-    @Autowired
-    private CommentRepository commentRepository;
+    // Achievement ID constant for first comment
+    private static final String FIRST_COMMENT_ACHIEVEMENT_ID = "AC0007";
 
-    @Autowired
     private UserRepository userRepository;
-
-    @Autowired
+    private AchievementUserRepository achievementUserRepository;
+    private AchievementRepository achievementRepository;
+    private CommentRepository commentRepository;
+    private AvatarRepository avatarRepository;
     private PostRepository postRepository;
 
     @Autowired
-    private AvatarRepository avatarRepository;
+    public CommentService(AchievementRepository achievementRepository, AchievementUserRepository achievementUserRepository, UserRepository userRepository, CommentRepository commentRepository, AvatarRepository avatarRepository, PostRepository postRepository
+    ){
+        this.achievementRepository = achievementRepository;
+        this.achievementUserRepository = achievementUserRepository;
+        this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
+        this.avatarRepository = avatarRepository;
+        this.postRepository = postRepository;
+    }
 
     // Create a new comment
     @Transactional
-    public CommentDTO createComment(CommentDTO commentDTO) {
+    public Map<String, Object> createComment(CommentDTO commentDTO) {
         // Check if post exists
         Optional<Post> postOptional = postRepository.findById(commentDTO.getPostId());
 
@@ -53,7 +69,61 @@ public class CommentService {
         // Save comment
         Comment savedComment = commentRepository.save(comment);
 
-        return convertToDTO(savedComment);
+        Map<String, Object> result = new HashMap<>();
+        result.put("comment", convertToDTO(savedComment));
+
+        // Check for achievements
+        commentAchievement(commentDTO.getUserId(), result);
+
+        return result;
+    }
+
+    private void commentAchievement(String userId, Map<String, Object> result) {
+        // Count comments by this user
+        long commentCount = commentRepository.countByUserId(userId);
+
+        // If this is their first comment (count should be 1)
+        if (commentCount == 1) {
+            // Check if user already has the achievement
+            boolean hasAchievement = achievementUserRepository.existsById_UserIdAndId_AchievementId(userId, FIRST_COMMENT_ACHIEVEMENT_ID);
+
+            if (!hasAchievement) {
+                // Get achievement details
+                Optional<Achievement> achievementOpt = achievementRepository.findById(FIRST_COMMENT_ACHIEVEMENT_ID);
+
+                if (achievementOpt.isPresent()) {
+                    Achievement achievement = achievementOpt.get();
+
+                    // Get user
+                    Optional<User> userOpt = userRepository.findById(userId);
+                    if (userOpt.isPresent()) {
+                        User user = userOpt.get();
+
+                        // Create achievement user record
+                        AchievementUserId achievementUserId = new AchievementUserId();
+                        achievementUserId.setUserId(userId);
+                        achievementUserId.setAchievementId(FIRST_COMMENT_ACHIEVEMENT_ID);
+
+                        AchievementUser achievementUser = new AchievementUser();
+                        achievementUser.setId(achievementUserId);
+                        achievementUser.setUser(user);
+                        achievementUser.setAchievement(achievement);
+                        achievementUser.setAchievementDate(System.currentTimeMillis());
+
+                        // Save achievement
+                        achievementUserRepository.save(achievementUser);
+
+                        // Return achievement data for response
+                        Map<String, String> achievementInfo = new HashMap<>();
+                        achievementInfo.put("achievementId", achievement.getAchievementId());
+                        achievementInfo.put("achievementName", achievement.getAchievementName());
+                        achievementInfo.put("achievementUrl", achievement.getAchievementUrl());
+
+                        result.put("achievement", achievementInfo);
+                    }
+                }
+            }
+        }
     }
 
     // Get all comments by Post ID

@@ -23,18 +23,29 @@ public class CommentController {
 
     // Create a new comment
     @PostMapping("/create")
-    public ResponseEntity<BaseResponse<Map<String, String>>> createComment(@RequestBody CommentDTO commentDTO) {
+    public ResponseEntity<BaseResponse<Map<String, Object>>> createComment(@RequestBody CommentDTO commentDTO) {
         try {
-            if (commentDTO.getPostId() == null || commentDTO.getUserId() == null || commentDTO.getCommentText() == null || commentDTO.getPostId().isBlank() || commentDTO.getUserId().isBlank() || commentDTO.getCommentText().isBlank() ) {
+            if (commentDTO.getPostId() == null || commentDTO.getUserId() == null || commentDTO.getCommentText() == null ||
+                    commentDTO.getPostId().isBlank() || commentDTO.getUserId().isBlank() || commentDTO.getCommentText().isBlank()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new BaseResponse<>(new MetaResponse(false, "Comment not found"), null)
                 );
             }
 
-            CommentDTO createdComment = commentService.createComment(commentDTO);
+            Map<String, Object> result = commentService.createComment(commentDTO);
+            CommentDTO createdComment = (CommentDTO) result.get("comment");
 
-            Map<String, String> responseData = new HashMap<>();
+            Map<String, Object> responseData = new HashMap<>();
             responseData.put("commentId", createdComment.getCommentId());
+
+            // If a new achievement was earned, include it in the response
+            if (result.containsKey("achievement")) {
+                responseData.put("achievement", result.get("achievement"));
+                // Customize the success message when an achievement is earned
+                return ResponseEntity.status(HttpStatus.CREATED).body(
+                        new BaseResponse<>(new MetaResponse(true, "Comment created successfully and achievement earned!"), responseData)
+                );
+            }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     new BaseResponse<>(new MetaResponse(true, "Comment created successfully"), responseData)

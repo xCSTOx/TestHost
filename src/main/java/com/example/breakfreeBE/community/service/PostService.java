@@ -1,13 +1,15 @@
 package com.example.breakfreeBE.community.service;
 
+import com.example.breakfreeBE.achievement.entity.Achievement;
+import com.example.breakfreeBE.achievement.entity.AchievementUser;
+import com.example.breakfreeBE.achievement.entity.AchievementUserId;
 import com.example.breakfreeBE.achievement.repository.AchievementRepository;
+import com.example.breakfreeBE.achievement.repository.AchievementUserRepository;
 import com.example.breakfreeBE.addiction.repository.AddictionDataRepository;
 import com.example.breakfreeBE.addiction.repository.AddictionRepository;
 import com.example.breakfreeBE.avatar.repository.AvatarRepository;
 import com.example.breakfreeBE.challenge.repository.ChallengeDataRepository;
 import com.example.breakfreeBE.challenge.repository.ChallengeRepository;
-import com.example.breakfreeBE.community.dto.CommentDTO;
-import com.example.breakfreeBE.community.entity.Comment;
 import com.example.breakfreeBE.community.entity.Post;
 import com.example.breakfreeBE.community.repository.BookmarkedPostRepository;
 import com.example.breakfreeBE.userRegistration.entity.User;
@@ -22,52 +24,65 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class PostService {
 
-    @Autowired
-    private PostRepository postRepository;
+    private static final String FIRST_POST_ACHIEVEMENT_ID = "AC0010";
+
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final CommentService commentService;
+    private final AvatarRepository avatarRepository;
+    private final AddictionRepository addictionRepository;
+    private final AddictionDataRepository addictionDataRepository;
+    private final AchievementRepository achievementRepository;
+    private final AchievementUserRepository achievementUserRepository;
+    private final ChallengeRepository challengeRepository;
+    private final ChallengeDataRepository challengeDataRepository;
+    private final BookmarkedPostRepository bookmarkedPostRepository;
 
     @Autowired
-    private CommentRepository commentRepository;
+    public PostService(
+            PostRepository postRepository,
+            CommentRepository commentRepository,
+            UserRepository userRepository,
+            CommentService commentService,
+            AvatarRepository avatarRepository,
+            AddictionRepository addictionRepository,
+            AddictionDataRepository addictionDataRepository,
+            AchievementRepository achievementRepository,
+            AchievementUserRepository achievementUserRepository,
+            ChallengeRepository challengeRepository,
+            ChallengeDataRepository challengeDataRepository,
+            BookmarkedPostRepository bookmarkedPostRepository) {
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
+        this.userRepository = userRepository;
+        this.commentService = commentService;
+        this.avatarRepository = avatarRepository;
+        this.addictionRepository = addictionRepository;
+        this.addictionDataRepository = addictionDataRepository;
+        this.achievementRepository = achievementRepository;
+        this.achievementUserRepository = achievementUserRepository;
+        this.challengeRepository = challengeRepository;
+        this.challengeDataRepository = challengeDataRepository;
+        this.bookmarkedPostRepository = bookmarkedPostRepository;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private CommentService commentService;
-
-    @Autowired
-    private AvatarRepository avatarRepository;
-
-    @Autowired
-    private AddictionRepository addictionRepository;
-
-    @Autowired
-    private AddictionDataRepository addictionDataRepository;
-
-    @Autowired
-    private AchievementRepository achievementRepository;
-
-    @Autowired
-    private ChallengeRepository challengeRepository;
-
-    @Autowired
-    private ChallengeDataRepository challengeDataRepository;
-
-    @Autowired
-    private BookmarkedPostRepository bookmarkedPostRepository;
-
-    public PostDTO createPost(PostRequestDTO postRequestDTO) {
+    public Map<String, Object> createPost(PostRequestDTO postRequestDTO) {
         String postId = generatePostId();
+        String userId = postRequestDTO.getUserId();
 
         Post post = new Post();
         post.setPostId(postId);
-        post.setUserId(postRequestDTO.getUserId());
+        post.setUserId(userId);
         post.setPostText(postRequestDTO.getPostText());
         post.setPostDate(postRequestDTO.getPostDate() != null ? postRequestDTO.getPostDate() : Instant.now().toEpochMilli());
 
@@ -84,7 +99,56 @@ public class PostService {
         }
 
         Post savedPost = postRepository.save(post);
-        return convertToDTOP(savedPost);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("post", convertToDTOP(savedPost));
+
+        PostAchievement(userId, result);
+
+        return result;
+    }
+
+    private void PostAchievement(String userId, Map<String, Object> result) {
+
+        long postCount = postRepository.countByUserId(userId);
+
+        if (postCount == 1) {
+
+            boolean hasAchievement = achievementUserRepository.existsById_UserIdAndId_AchievementId(userId, FIRST_POST_ACHIEVEMENT_ID);
+
+            if (!hasAchievement) {
+
+                Optional<Achievement> achievementOpt = achievementRepository.findById(FIRST_POST_ACHIEVEMENT_ID);
+
+                if (achievementOpt.isPresent()) {
+                    Achievement achievement = achievementOpt.get();
+
+                    Optional<User> userOpt = userRepository.findById(userId);
+                    if (userOpt.isPresent()) {
+                        User user = userOpt.get();
+
+                        AchievementUserId achievementUserId = new AchievementUserId();
+                        achievementUserId.setUserId(userId);
+                        achievementUserId.setAchievementId(FIRST_POST_ACHIEVEMENT_ID);
+
+                        AchievementUser achievementUser = new AchievementUser();
+                        achievementUser.setId(achievementUserId);
+                        achievementUser.setUser(user);
+                        achievementUser.setAchievement(achievement);
+                        achievementUser.setAchievementDate(System.currentTimeMillis());
+
+                        achievementUserRepository.save(achievementUser);
+
+                        Map<String, String> achievementInfo = new HashMap<>();
+                        achievementInfo.put("achievementId", achievement.getAchievementId());
+                        achievementInfo.put("achievementName", achievement.getAchievementName());
+                        achievementInfo.put("achievementUrl", achievement.getAchievementUrl());
+
+                        result.put("achievement", achievementInfo);
+                    }
+                }
+            }
+        }
     }
 
     @Transactional
@@ -185,19 +249,15 @@ public class PostService {
         }
     }
 
-    // Helper method to convert Post to PostDTO
     public PostDTO convertToDTOP(Post post) {
         PostDTO dto = new PostDTO();
         dto.setPostId(post.getPostId());
         dto.setPostText(post.getPostText());
         dto.setPostDate(post.getPostDate());
 
-        // --------- BOOKMARKED (Boolean) ---------
         boolean isBookmarked = bookmarkedPostRepository.existsByUserIdAndPostId(post.getUserId(), post.getPostId());
         dto.setBookmarked(isBookmarked);
 
-
-        // --------- PROFILE DATA ---------
         userRepository.findById(post.getUserId()).ifPresent(user -> {
             PostDTO.ProfileDTO profileDTO = new PostDTO.ProfileDTO();
             profileDTO.setUserId(user.getUserId());
@@ -211,7 +271,6 @@ public class PostService {
             dto.setProfile(profileDTO);
         });
 
-        // --------- STREAK DATA ---------
         if (post.getAddictionId() != null) {
             addictionRepository.findByUserIdAndAddictionId(post.getUserId(), post.getAddictionId())
                     .ifPresent(addiction -> {
@@ -237,7 +296,6 @@ public class PostService {
                     });
         }
 
-        // --------- ACHIEVEMENT DATA ---------
         if (post.getAchievementId() != null) {
             achievementRepository.findById(post.getAchievementId())
                     .ifPresent(achievement -> {
@@ -249,7 +307,6 @@ public class PostService {
                     });
         }
 
-        // --------- CHALLENGE DATA ---------
         if (post.getChallengeId() != null) {
             challengeRepository.findById(post.getChallengeId())
                     .ifPresent(challenge -> {
