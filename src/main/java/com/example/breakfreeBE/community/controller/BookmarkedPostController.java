@@ -38,7 +38,6 @@ public class BookmarkedPostController {
 
             Map<String, Object> responseData = new HashMap<>();
 
-            // If a new achievement was earned, include it in the response
             if (result.containsKey("achievement")) {
                 responseData.put("achievement", result.get("achievement"));
 

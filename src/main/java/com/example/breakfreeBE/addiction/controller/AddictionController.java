@@ -2,13 +2,11 @@ package com.example.breakfreeBE.addiction.controller;
 
 import com.example.breakfreeBE.achievement.entity.Achievement;
 import com.example.breakfreeBE.achievement.repository.AchievementRepository;
-import com.example.breakfreeBE.achievement.repository.AchievementUserRepository;
 import com.example.breakfreeBE.addiction.dto.AddictionDTO;
 import com.example.breakfreeBE.addiction.repository.AddictionRepository;
 import com.example.breakfreeBE.addiction.service.AddictionService;
 import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.common.MetaResponse;
-import com.example.breakfreeBE.userRegistration.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +53,6 @@ public class AddictionController {
 
         AddictionDTO foundAddiction = addiction.get();
 
-        // Create a map with only the required fields
         Map<String, Object> oneResponse = new HashMap<>();
         oneResponse.put("saver", foundAddiction.getSaver());
         oneResponse.put("motivation", foundAddiction.getMotivation());
@@ -78,14 +75,12 @@ public class AddictionController {
         List<AddictionDTO> addictions = addictionService.getAddictionsByUser(requestDto.getUserId());
         List<Map<String, Object>> newAchievements = new ArrayList<>();
 
-        // Create response data map
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("addictions", addictions);
 
-        // Process all addictions to update their current streak and longest streak
+        // current streak and longest streak
         for (AddictionDTO addiction : addictions) {
             if (addiction.getStartDate() != null) {
-                // Konversi timestamp ke LocalDate
                 LocalDate startDate = Instant.ofEpochMilli(addiction.getStartDate())
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate();
@@ -103,15 +98,13 @@ public class AddictionController {
             }
         }
 
-        // Process streak achievements after updating all addictions
         Map<String, Object> highestAchievement = addictionService.processStreakAchievements(
                 requestDto.getUserId(),
                 addictions
         );
 
-        // Add the highest achievement to the response if one exists
         if (highestAchievement != null) {
-            responseData.put("achievement", highestAchievement); // Note: Using singular "achievement" now
+            responseData.put("achievement", highestAchievement);
         }
 
         return ResponseEntity.ok(
@@ -220,7 +213,6 @@ public class AddictionController {
 
             Map<String, Object> responseData = new HashMap<>();
 
-            // If a new achievement was earned, include it in the response
             if (result.containsKey("achievement")) {
                 responseData.put("achievement", result.get("achievement"));
 

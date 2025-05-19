@@ -27,8 +27,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
-
-    // Achievement ID constant for first comment
     private static final String FIRST_COMMENT_ACHIEVEMENT_ID = "AC0007";
 
     private UserRepository userRepository;
@@ -49,16 +47,11 @@ public class CommentService {
         this.postRepository = postRepository;
     }
 
-    // Create a new comment
     @Transactional
     public Map<String, Object> createComment(CommentDTO commentDTO) {
-        // Check if post exists
         Optional<Post> postOptional = postRepository.findById(commentDTO.getPostId());
-
-        // Generate comment ID with format C00001, C00002, etc.
         String commentId = generateCommentId();
 
-        // Create new comment
         Comment comment = new Comment();
         comment.setCommentId(commentId);
         comment.setPostId(commentDTO.getPostId());
@@ -66,40 +59,32 @@ public class CommentService {
         comment.setCommentText(commentDTO.getCommentText());
         comment.setCommentDate(Instant.now().toEpochMilli());
 
-        // Save comment
         Comment savedComment = commentRepository.save(comment);
 
         Map<String, Object> result = new HashMap<>();
         result.put("comment", convertToDTO(savedComment));
 
-        // Check for achievements
         commentAchievement(commentDTO.getUserId(), result);
 
         return result;
     }
 
     private void commentAchievement(String userId, Map<String, Object> result) {
-        // Count comments by this user
         long commentCount = commentRepository.countByUserId(userId);
 
-        // If this is their first comment (count should be 1)
         if (commentCount == 1) {
-            // Check if user already has the achievement
             boolean hasAchievement = achievementUserRepository.existsById_UserIdAndId_AchievementId(userId, FIRST_COMMENT_ACHIEVEMENT_ID);
 
             if (!hasAchievement) {
-                // Get achievement details
                 Optional<Achievement> achievementOpt = achievementRepository.findById(FIRST_COMMENT_ACHIEVEMENT_ID);
 
                 if (achievementOpt.isPresent()) {
                     Achievement achievement = achievementOpt.get();
-
-                    // Get user
                     Optional<User> userOpt = userRepository.findById(userId);
+
                     if (userOpt.isPresent()) {
                         User user = userOpt.get();
 
-                        // Create achievement user record
                         AchievementUserId achievementUserId = new AchievementUserId();
                         achievementUserId.setUserId(userId);
                         achievementUserId.setAchievementId(FIRST_COMMENT_ACHIEVEMENT_ID);
@@ -110,10 +95,8 @@ public class CommentService {
                         achievementUser.setAchievement(achievement);
                         achievementUser.setAchievementDate(System.currentTimeMillis());
 
-                        // Save achievement
                         achievementUserRepository.save(achievementUser);
 
-                        // Return achievement data for response
                         Map<String, String> achievementInfo = new HashMap<>();
                         achievementInfo.put("achievementId", achievement.getAchievementId());
                         achievementInfo.put("achievementName", achievement.getAchievementName());
@@ -126,7 +109,6 @@ public class CommentService {
         }
     }
 
-    // Get all comments by Post ID
     public List<CommentDTO> getCommentsByPost(String postId) {
         List<Comment> comments = commentRepository.findByPostIdOrderByCommentIdDesc(postId);
         return comments.stream()
@@ -134,8 +116,6 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
-
-    // Helper method to generate next comment ID with format C00001
     private String generateCommentId() {
         Optional<String> lastCommentIdOpt = commentRepository.findLastCommentId();
 
@@ -148,7 +128,6 @@ public class CommentService {
         }
     }
 
-    // Helper method to convert Comment to CommentDTO
     public CommentDTO convertToDTO(Comment comment) {
         CommentDTO dto = new CommentDTO();
         dto.setCommentId(comment.getCommentId());
@@ -162,7 +141,6 @@ public class CommentService {
             User userEntity = user.get();
             dto.setUsername(userEntity.getUsername());
 
-            // Fetch avatar URL if avatar ID exists
             String avatarId = userEntity.getAvatarId();
             if (avatarId != null) {
                 Optional<Avatar> avatar = avatarRepository.findById(avatarId);

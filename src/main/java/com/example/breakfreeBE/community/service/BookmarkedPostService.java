@@ -8,7 +8,6 @@ import com.example.breakfreeBE.achievement.repository.AchievementUserRepository;
 import com.example.breakfreeBE.community.dto.BookmarkedRequestDTO;
 import com.example.breakfreeBE.community.dto.PostDTO;
 import com.example.breakfreeBE.community.entity.BookmarkedPost;
-import com.example.breakfreeBE.community.entity.Post;
 import com.example.breakfreeBE.community.repository.BookmarkedPostRepository;
 import com.example.breakfreeBE.community.repository.PostRepository;
 import com.example.breakfreeBE.userRegistration.entity.User;

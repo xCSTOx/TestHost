@@ -153,18 +153,13 @@ public class PostService {
 
     @Transactional
     public void deletePost(String postId, String userId) {
-        // Check if post exists
         Optional<Post> postOptional = postRepository.findById(postId);
 
         if (postOptional.isPresent()) {
             Post post = postOptional.get();
 
-            // Check if the user is authorized to delete this post
             if (post.getUserId().equals(userId)) {
-                // Delete all comments related to this post
                 commentRepository.deleteByPostId(postId);
-
-                // Delete the post
                 postRepository.deleteById(postId);
             } else {
                 throw new RuntimeException("User is not authorized to delete this post");
@@ -207,7 +202,6 @@ public class PostService {
     }
 
     public PostDTO getPostDetailsById(String postId, String userId) {
-        // Check if post exists
         Optional<Post> postOptional = postRepository.findById(postId);
 
         if (postOptional.isPresent()) {
@@ -218,7 +212,6 @@ public class PostService {
         }
     }
 
-    // (newest first)
     public List<PostDTO> getAllPosts() {
         List<Post> posts = postRepository.findAll(Sort.by(Sort.Direction.DESC, "postId"));
 
@@ -234,7 +227,6 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
-    // Generate post ID with the format P00001, P00002, etc.
     private String generatePostId() {
         Optional<String> lastPostIdOpt = postRepository.findLastPostId();
         String lastPostId = lastPostIdOpt.orElse("P00000");
@@ -243,7 +235,6 @@ public class PostService {
             int numericPart = Integer.parseInt(lastPostId.substring(1));
             return String.format("P%05d", numericPart + 1);
         } catch (NumberFormatException e) {
-            // log error and fallback
             System.err.println("Invalid lastPostId format: " + lastPostId);
             return "P00001";
         }

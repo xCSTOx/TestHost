@@ -1,7 +1,6 @@
 package com.example.breakfreeBE.community.controller;
 
 import com.example.breakfreeBE.community.dto.CommentDTO;
-import com.example.breakfreeBE.community.entity.Comment;
 import com.example.breakfreeBE.community.service.CommentService;
 import com.example.breakfreeBE.common.BaseResponse;
 import com.example.breakfreeBE.common.MetaResponse;
@@ -38,10 +37,8 @@ public class CommentController {
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("commentId", createdComment.getCommentId());
 
-            // If a new achievement was earned, include it in the response
             if (result.containsKey("achievement")) {
                 responseData.put("achievement", result.get("achievement"));
-                // Customize the success message when an achievement is earned
                 return ResponseEntity.status(HttpStatus.CREATED).body(
                         new BaseResponse<>(new MetaResponse(true, "Comment created successfully and achievement earned!"), responseData)
                 );
@@ -57,7 +54,6 @@ public class CommentController {
         }
     }
 
-    // Get comments by post
     @PostMapping("/view")
     public ResponseEntity<BaseResponse<List<CommentDTO>>> getCommentsByPost(@RequestBody CommentDTO commentDTO) {
         try {
