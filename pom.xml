@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>BreakFree</artifactId>
+	<artifactId>BE_breakfree</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Breakfree</name>
 	<description>Demo project for Spring Boot</description>
@@ -74,7 +74,12 @@
 			<version>1.18.30</version>
 			<scope>provided</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.30</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
